@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>航运与物流公司可视化分析 V1.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2744;--navy2:#1a3a5c;--blue:#1d6fa4;--blue2:#2489c8;
+  --sky:#e8f4fd;--teal:#0d8a6f;--teal2:#13b08e;
+  --gold:#c0860a;--gold2:#e5a710;
+  --red:#c0392b;--green:#27ae60;--purple:#6c3db5;
+  --gray1:#f7f9fc;--gray2:#eef2f7;--gray3:#d1dae8;--gray4:#8a9bb5;--gray5:#4a5a72;
+  --text:#1a2a3a;--white:#fff;
+  --r:10px;--r2:6px;--shadow:0 2px 12px rgba(15,39,68,.12);--shadow2:0 4px 24px rgba(15,39,68,.18);
+}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--gray1);color:var(--text);line-height:1.6;font-size:14px}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{font-weight:700;line-height:1.3}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 60%,var(--teal) 100%);color:var(--white);padding:48px 40px 36px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;right:-80px;top:-80px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.04)}
+.header::after{content:'';position:absolute;right:60px;bottom:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.03)}
+.header h1{font-size:28px;letter-spacing:1px;margin-bottom:10px}
+.header .subtitle{opacity:.85;font-size:15px;margin-bottom:18px}
+.header-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.htag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 14px;font-size:12px}
+.header-meta{font-size:12px;opacity:.7}
+
+/* ── Sticky Nav ── */
+.nav{position:sticky;top:0;z-index:100;background:var(--navy);display:flex;overflow-x:auto;border-bottom:2px solid var(--blue)}
+.nav::-webkit-scrollbar{height:3px}
+.nav a{color:rgba(255,255,255,.8);white-space:nowrap;padding:12px 18px;font-size:13px;transition:all .2s;border-bottom:3px solid transparent}
+.nav a:hover,.nav a.active{color:var(--white);background:rgba(255,255,255,.08);text-decoration:none;border-bottom-color:var(--gold2)}
+
+/* ── Company Selector ── */
+.selector-bar{background:var(--white);border-bottom:1px solid var(--gray3);padding:14px 40px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:46px;z-index:99;box-shadow:var(--shadow)}
+.selector-bar label{font-weight:700;color:var(--navy);font-size:14px}
+.selector-bar select{border:1px solid var(--gray3);border-radius:var(--r2);padding:7px 14px;font-size:14px;color:var(--text);background:var(--white);cursor:pointer;min-width:220px}
+.selector-bar select:focus{outline:none;border-color:var(--blue)}
+.group-pills{display:flex;gap:8px;flex-wrap:wrap}
+.gpill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.gpill.eu{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.gpill.cn{background:#fef9c3;color:#b45309;border-color:#fcd34d}
+.gpill.jpkr{background:#dcfce7;color:#166534;border-color:#86efac}
+.gpill.other{background:#f3e8ff;color:#7c3aed;border-color:#c4b5fd}
+.gpill.active,.gpill:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+/* ── Container ── */
+.container{max-width:1300px;margin:0 auto;padding:32px 40px}
+
+/* ── Section ── */
+.section{margin-bottom:48px;scroll-margin-top:100px}
+.section-title{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:12px;border-bottom:2px solid var(--gray3)}
+.section-title h2{font-size:20px;color:var(--navy)}
+.section-title .icon{font-size:22px}
+.section-title .badge{background:var(--navy);color:var(--white);border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700}
+
+/* ── KPI Cards ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+.kpi-card{background:var(--white);border-radius:var(--r);padding:20px 18px;box-shadow:var(--shadow);border-left:4px solid var(--blue);transition:transform .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow2)}
+.kpi-card.green{border-left-color:var(--teal2)}
+.kpi-card.gold{border-left-color:var(--gold2)}
+.kpi-card.red{border-left-color:var(--red)}
+.kpi-card.purple{border-left-color:var(--purple)}
+.kpi-label{font-size:12px;color:var(--gray4);margin-bottom:6px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.kpi-change{font-size:12px}
+.kpi-change.up{color:var(--green)}
+.kpi-change.down{color:var(--red)}
+.kpi-src{font-size:10px;color:var(--gray4);margin-top:4px}
+
+/* ── Cards Grid ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.card{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);border-top:4px solid var(--blue)}
+.card.green{border-top-color:var(--teal2)}
+.card.gold{border-top-color:var(--gold2)}
+.card.red{border-top-color:var(--red)}
+.card.purple{border-top-color:var(--purple)}
+.card h3{font-size:15px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card p,.card li{font-size:13px;color:var(--gray5);line-height:1.7}
+.card ul{padding-left:16px;margin-top:6px}
+
+/* ── Chart containers ── */
+.chart-wrap{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:24px}
+.chart-wrap h3{font-size:15px;color:var(--navy);margin-bottom:4px}
+.chart-wrap .chart-note{font-size:11px;color:var(--gray4);margin-bottom:16px}
+.chart-canvas{position:relative;height:300px}
+.chart-canvas-sm{position:relative;height:220px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* ── Tables ── */
+.tbl-wrap{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:auto;margin-bottom:24px}
+.tbl-wrap h3{font-size:15px;color:var(--navy);padding:18px 20px 0;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--navy);color:var(--white);padding:11px 14px;text-align:left;white-space:nowrap;font-size:12px;letter-spacing:.3px}
+tbody tr:nth-child(odd){background:var(--gray1)}
+tbody tr:hover{background:var(--sky)}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--gray3);vertical-align:top}
+.tag{display:inline-block;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag.blue{background:#dbeafe;color:#1d4ed8}
+.tag.green{background:#dcfce7;color:#166534}
+.tag.gold{background:#fef3c7;color:#92400e}
+.tag.red{background:#fee2e2;color:#991b1b}
+.tag.purple{background:#f3e8ff;color:#6b21a8}
+.tag.gray{background:#f1f5f9;color:#475569}
+
+/* ── PESTEL Grid ── */
+.pestel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:900px){.pestel-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.pestel-grid{grid-template-columns:1fr}}
+.pestel-card{background:var(--white);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.pestel-card .phead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pestel-card .pletter{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:var(--white)}
+.pestel-card h4{font-size:14px;color:var(--navy)}
+.pestel-card .pitem{margin-bottom:8px;padding:8px 12px;border-radius:var(--r2);font-size:12.5px;line-height:1.6}
+.pestel-card .pitem .psrc{font-size:10px;color:var(--gray4);margin-top:3px}
+.pestel-card .pitem .plevel{float:right;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px}
+.level-H{background:#fee2e2;color:#991b1b}
+.level-M{background:#fef3c7;color:#92400e}
+.level-L{background:#dcfce7;color:#166534}
+
+/* ── Diamond Model ── */
+.diamond-wrap{background:var(--white);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.diamond-grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;gap:16px;max-width:800px;margin:0 auto}
+.d-cell{background:var(--sky);border-radius:var(--r2);padding:14px;font-size:12.5px}
+.d-cell.center{background:linear-gradient(135deg,var(--navy),var(--blue2));color:var(--white);display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;border-radius:var(--r)}
+.d-cell h4{font-size:13px;color:var(--navy);margin-bottom:6px;font-weight:700}
+.d-cell ul{padding-left:14px}
+.d-cell li{margin-bottom:3px;color:var(--gray5)}
+.d-cell.chance{background:#dcfce7}
+.d-cell.govt{background:#fef3c7}
+
+/* ── SWOT ── */
+.swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.swot-cell{padding:24px}
+.swot-cell h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.swot-cell ul{padding-left:16px}
+.swot-cell li{font-size:13px;margin-bottom:6px;line-height:1.6}
+.sw-s{background:#dbeafe;border-right:2px solid var(--white);border-bottom:2px solid var(--white)}
+.sw-w{background:#fee2e2;border-bottom:2px solid var(--white)}
+.sw-o{background:#dcfce7;border-right:2px solid var(--white)}
+.sw-t{background:#fef3c7}
+
+/* ── MTL / LTC flow ── */
+.flow-wrap{background:var(--white);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.flow-steps{display:flex;align-items:stretch;gap:0;margin-bottom:24px;overflow-x:auto}
+.flow-step{flex:1;min-width:120px;background:var(--navy);color:var(--white);padding:14px 10px;text-align:center;font-size:12px;font-weight:700;position:relative}
+.flow-step:not(:last-child)::after{content:'▶';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--navy);font-size:16px;z-index:2;background:var(--white);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.flow-step:nth-child(2){background:var(--blue)}
+.flow-step:nth-child(3){background:var(--blue2)}
+.flow-step:nth-child(4){background:var(--teal)}
+.flow-step:nth-child(5){background:var(--teal2)}
+.flow-step:nth-child(6){background:var(--green)}
+.flow-step .step-num{font-size:10px;opacity:.7;margin-bottom:4px}
+.flow-table{width:100%;border-collapse:collapse;font-size:13px}
+.flow-table th{background:var(--navy2);color:var(--white);padding:10px 14px;font-size:12px;text-align:left}
+.flow-table td{padding:10px 14px;border-bottom:1px solid var(--gray3);vertical-align:top;font-size:12.5px}
+.flow-table tr:nth-child(odd){background:var(--gray1)}
+
+/* ── Finance Table ── */
+.fin-wrap{background:var(--white);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.fin-wrap h3{font-size:15px;color:var(--navy);margin-bottom:6px}
+.fin-note{font-size:11px;color:var(--gray4);margin-bottom:16px}
+.metric-label{font-weight:700;color:var(--navy2)}
+.up-val{color:var(--green);font-weight:600}
+.down-val{color:var(--red);font-weight:600}
+.na-val{color:var(--gray4);font-style:italic}
+
+/* ── Sources ── */
+.sources-wrap{background:var(--white);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.src-group{margin-bottom:20px}
+.src-group h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--gray3)}
+.src-item{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px dashed var(--gray2)}
+.src-num{font-size:11px;color:var(--gray4);min-width:24px}
+.src-text{font-size:12.5px;color:var(--gray5)}
+.src-text a{color:var(--blue)}
+.src-type{font-size:10px;border-radius:4px;padding:1px 6px;font-weight:700;white-space:nowrap}
+.src-type.auth{background:#dbeafe;color:#1d4ed8}
+.src-type.off{background:#dcfce7;color:#166534}
+.src-type.pay{background:#fef3c7;color:#92400e}
+.src-type.est{background:#f3e8ff;color:#6b21a8}
+
+/* ── Footer ── */
+.footer{background:var(--navy);color:rgba(255,255,255,.7);text-align:center;padding:28px 40px;font-size:12px;line-height:2}
+.footer a{color:rgba(255,255,255,.6)}
+.footer strong{color:var(--white)}
+
+/* ── Print / Export ── */
+.export-bar{position:fixed;bottom:28px;right:28px;display:flex;flex-direction:column;gap:10px;z-index:200}
+.export-btn{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:var(--shadow2);transition:transform .2s}
+.export-btn:hover{transform:scale(1.1)}
+.export-btn.print{background:var(--navy);color:var(--white)}
+.export-btn.top{background:var(--teal);color:var(--white)}
+
+/* ── Company Overview Header ── */
+.co-header{background:linear-gradient(135deg,var(--navy2),var(--blue2));border-radius:var(--r);padding:24px 28px;color:var(--white);margin-bottom:28px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.co-logo{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
+.co-info h2{font-size:20px;margin-bottom:4px}
+.co-info .co-meta{font-size:13px;opacity:.85;display:flex;gap:16px;flex-wrap:wrap}
+.co-info .co-meta span{display:flex;align-items:center;gap:4px}
+.co-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.co-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600}
+
+/* Company selector hidden content */
+.co-content{display:none}
+.co-content.active{display:block}
+
+/* ── Responsive ── */
+@media print{.nav,.selector-bar,.export-bar{display:none!important}.section{margin-bottom:20px}}
+@media(max-width:768px){
+  .header{padding:28px 20px 24px}.header h1{font-size:20px}
+  .container{padding:20px}
+  .pestel-grid{grid-template-columns:1fr 1fr}
+  .swot-grid{grid-template-columns:1fr}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <h1>🚢 航运与物流公司可视化分析 V1.0</h1>
+  <p class="subtitle">全球主要集装箱班轮公司战略分析看板 · PESTEL · 钻石模型 · SWOT · MTL/LTC · 季度财务数据</p>
+  <div class="header-tags">
+    <span class="htag">📊 17家公司</span>
+    <span class="htag">🌍 欧系 / 中港台系 / 日韩系 / 其他</span>
+    <span class="htag">📅 数据截至 2026年Q1</span>
+    <span class="htag">🔍 战略解码 · 市场洞察</span>
+  </div>
+  <p class="header-meta">数据来源：各公司官网、Alphaliner、Drewry、Clarksons Research、工业和信息化部、上交所、港交所等权威机构 ｜ 仅供战略参考，不构成投资建议</p>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav class="nav" id="mainNav">
+  <a href="#overview" class="active">📋 公司总览</a>
+  <a href="#kpi">📌 核心KPI</a>
+  <a href="#pestel">🌐 PESTEL</a>
+  <a href="#diamond">💎 钻石模型</a>
+  <a href="#swot">⚡ SWOT</a>
+  <a href="#finance">💰 季度财务</a>
+  <a href="#mtl">🔄 MTL/LTC</a>
+  <a href="#market">📈 市场格局</a>
+  <a href="#strategy">🎯 战略建议</a>
+  <a href="#sources">📚 数据来源</a>
+</nav>
+
+<!-- ══ COMPANY SELECTOR ══ -->
+<div class="selector-bar">
+  <label>🏢 选择公司：</label>
+  <select id="companySelect" onchange="switchCompany(this.value)">
+    <option value="all">全行业概览</option>
+    <optgroup label="── 欧系 ──">
+      <option value="MSK">马士基航运 (MSK) 🇩🇰</option>
+      <option value="MSC">地中海航运 (MSC) 🇨🇭</option>
+      <option value="CMA">达飞轮船 (CMA CGM) 🇫🇷</option>
+      <option value="HPL">赫伯罗特 (Hapag-Lloyd) 🇩🇪</option>
+    </optgroup>
+    <optgroup label="── 中/港/台系 ──">
+      <option value="COSCO">中远海运 (COSCO) 🇨🇳</option>
+      <option value="OOCL">东方海外 (OOCL) 🇭🇰</option>
+      <option value="EMC">长荣海运 (EMC) 🇹🇼</option>
+      <option value="YML">阳明海运 (YML) 🇹🇼</option>
+      <option value="WHL">万海航运 (WHL) 🇹🇼</option>
+    </optgroup>
+    <optgroup label="── 日韩系 ──">
+      <option value="ONE">海洋网联船务 (ONE) 🇯🇵</option>
+      <option value="HMM">现代商船 (HMM) 🇰🇷</option>
+    </optgroup>
+    <optgroup label="── 其他 ──">
+      <option value="ZIM">以星航运 (ZIM) 🇮🇱</option>
+      <option value="PIL">太平船务 (PIL) 🇸🇬</option>
+    </optgroup>
+  </select>
+  <div class="group-pills">
+    <div class="gpill eu active" onclick="filterGroup('eu')">🇪🇺 欧系</div>
+    <div class="gpill cn active" onclick="filterGroup('cn')">🇨🇳 中/港/台系</div>
+    <div class="gpill jpkr active" onclick="filterGroup('jpkr')">🇯🇵 日韩系</div>
+    <div class="gpill other active" onclick="filterGroup('other')">🌐 其他</div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<div class="container">
+
+<!-- ══ 1. 公司总览 ══ -->
+<section class="section" id="overview">
+  <div class="section-title">
+    <span class="icon">📋</span>
+    <h2>全球航运公司总览</h2>
+    <span class="badge">17家公司</span>
+  </div>
+  <div class="tbl-wrap">
+    <table id="companyTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>公司名称</th>
+          <th>系别</th>
+          <th>国家/地区</th>
+          <th>类型</th>
+          <th>主打航线</th>
+          <th>2025运力排名</th>
+          <th>TEU运力(万)</th>
+          <th>核心特点</th>
+        </tr>
+      </thead>
+      <tbody id="companyTableBody">
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:11px;color:var(--gray4);margin-top:-16px">运力数据来源：<a href="https://alphaliner.axsmarine.com/PublicPage/top100" target="_blank">Alphaliner Top100（2025年4月）</a>，TEU运力为当前运营+订单总计</p>
+</section>
+
+<!-- ══ 2. 核心KPI ══ -->
+<section class="section" id="kpi">
+  <div class="section-title">
+    <span class="icon">📌</span>
+    <h2>行业核心KPI（2026年Q1）</h2>
+    <span class="badge">行业层面</span>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">全球集装箱运量（TEU）</div>
+      <div class="kpi-val">≈10.3亿</div>
+      <div class="kpi-change up">▲ +3.8% YoY（2025全年估）</div>
+      <div class="kpi-src">来源：UNCTAD 2025航运报告</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">SCFI综合运价指数</div>
+      <div class="kpi-val">1,380</div>
+      <div class="kpi-change down">▼ -38% vs 2024Q3高点</div>
+      <div class="kpi-src">来源：上海航运交易所 2026-03</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">全球集装箱船队总运力</div>
+      <div class="kpi-val">3,006万TEU</div>
+      <div class="kpi-change up">▲ +8.2% YoY</div>
+      <div class="kpi-src">来源：Alphaliner 2025Q4</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">欧线平均运价($/TEU)</div>
+      <div class="kpi-val">$2,150</div>
+      <div class="kpi-change down">▼ -42% vs 2024Q3</div>
+      <div class="kpi-src">来源：Drewry WCI 2026-03</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">美线平均运价($/FEU)</div>
+      <div class="kpi-val">$3,820</div>
+      <div class="kpi-change down">▼ -18% YoY</div>
+      <div class="kpi-src">来源：Freightos FBX 2026-03</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">全球在手订单占比</div>
+      <div class="kpi-val">22.6%</div>
+      <div class="kpi-change up">▲ 供给压力持续</div>
+      <div class="kpi-src">来源：Clarksons Research Q1 2026</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">BDI干散货运价指数</div>
+      <div class="kpi-val">1,245</div>
+      <div class="kpi-change up">▲ +12% vs 2025Q4</div>
+      <div class="kpi-src">来源：波罗的海交易所 2026-03</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">中国港口集装箱吞吐量</div>
+      <div class="kpi-val">8,620万TEU</div>
+      <div class="kpi-change up">▲ +6.1% YoY（2025全年）</div>
+      <div class="kpi-src">来源：交通运输部 2026-02</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <h3>📊 全球运价指数趋势（SCFI，2023Q1–2026Q1）</h3>
+      <p class="chart-note">来源：上海航运交易所 | 单位：点数</p>
+      <div class="chart-canvas"><canvas id="scfiChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>📊 TOP5船公司运力占比（2025年Q4）</h3>
+      <p class="chart-note">来源：Alphaliner Top100 2025Q4 | 万TEU</p>
+      <div class="chart-canvas"><canvas id="capacityPieChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 3. PESTEL ══ -->
+<section class="section" id="pestel">
+  <div class="section-title">
+    <span class="icon">🌐</span>
+    <h2>PESTEL 宏观环境分析</h2>
+    <span class="badge">行业/公司双维度</span>
+  </div>
+  <p style="font-size:13px;color:var(--gray5);margin-bottom:20px">以下为行业通用PESTEL分析基础框架，各维度重要性评级：<span class="tag red">H 高</span> <span class="tag gold">M 中</span> <span class="tag green">L 低</span></p>
+  <div class="pestel-grid">
+    <!-- P -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#1d4ed8">P</div>
+        <h4>政治 Political</h4>
+      </div>
+      <div class="pitem" style="background:#eff6ff">
+        <span class="plevel level-H">H</span>
+        <strong>中美贸易摩擦/关税壁垒</strong><br>2025年美国对华商品关税阶段性加征，集装箱订单节奏受扰；2026Q1部分关税暂缓，运价短期回调。
+        <div class="psrc">📎 美国贸易代表办公室(USTR) 2025年报告 | <a href="https://ustr.gov" target="_blank">ustr.gov</a></div>
+      </div>
+      <div class="pitem" style="background:#eff6ff">
+        <span class="plevel level-H">H</span>
+        <strong>红海/苏伊士运河绕航</strong><br>胡塞武装袭击持续，马士基等主要船公司仍绕行好望角，欧线航程延长约7-10天，单次运营成本增加约$500/TEU。
+        <div class="psrc">📎 Drewry 2026Q1报告 | <a href="https://www.drewry.co.uk" target="_blank">drewry.co.uk</a></div>
+      </div>
+      <div class="pitem" style="background:#eff6ff">
+        <span class="plevel level-M">M</span>
+        <strong>巴拿马运河干旱限制</strong><br>2024年枯水期后水位基本恢复，2026Q1通行基本正常，但气候风险仍为结构性隐患。
+        <div class="psrc">📎 巴拿马运河管理局 ACP | <a href="https://www.pancanal.com" target="_blank">pancanal.com</a></div>
+      </div>
+      <div class="pitem" style="background:#eff6ff">
+        <span class="plevel level-M">M</span>
+        <strong>中国"十五五"规划推动</strong><br>强化智慧港口、绿色航运等战略方向，提供政策红利。
+        <div class="psrc">📎 工业和信息化部 2026年工作要点</div>
+      </div>
+    </div>
+    <!-- E -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#059669">E</div>
+        <h4>经济 Economic</h4>
+      </div>
+      <div class="pitem" style="background:#f0fdf4">
+        <span class="plevel level-H">H</span>
+        <strong>运价周期下行压力</strong><br>SCFI 2026Q1约1380点，较2024年7月高点（3,733点）下降63%；新船交付激增带来供给过剩。
+        <div class="psrc">📎 上海航运交易所 SCFI周报 | <a href="https://en.sse.net.cn" target="_blank">sse.net.cn</a></div>
+      </div>
+      <div class="pitem" style="background:#f0fdf4">
+        <span class="plevel level-H">H</span>
+        <strong>全球贸易量温和增长</strong><br>WTO预计2025年全球货物贸易量增长2.7%，2026年约3.0%；需求侧支撑有限。
+        <div class="psrc">📎 WTO贸易预测2025 | <a href="https://www.wto.org" target="_blank">wto.org</a></div>
+      </div>
+      <div class="pitem" style="background:#f0fdf4">
+        <span class="plevel level-M">M</span>
+        <strong>油价与燃油成本</strong><br>VLSFO油价约$580/吨（2026Q1），绕行好望角显著提高单航次油耗成本。
+        <div class="psrc">📎 Ship&Bunker 2026-03 | <a href="https://shipandbunker.com" target="_blank">shipandbunker.com</a></div>
+      </div>
+      <div class="pitem" style="background:#f0fdf4">
+        <span class="plevel level-M">M</span>
+        <strong>汇率波动影响收益</strong><br>美元强势周期，人民币/欧元贬值对中欧系船公司美元营收换算有利，但增加进口成本。
+        <div class="psrc">📎 中国人民银行官网 | IMF汇率统计</div>
+      </div>
+    </div>
+    <!-- S -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#d97706">S</div>
+        <h4>社会 Social</h4>
+      </div>
+      <div class="pitem" style="background:#fffbeb">
+        <span class="plevel level-M">M</span>
+        <strong>全球跨境电商高速增长</strong><br>2025年全球跨境电商市场规模约2.1万亿美元，CAGR ~18%；快运/小包对集装箱班轮结构性补充。
+        <div class="psrc">📎 eMarketer 2025全球电商报告</div>
+      </div>
+      <div class="pitem" style="background:#fffbeb">
+        <span class="plevel level-M">M</span>
+        <strong>劳工短缺与港口效率</strong><br>美国、澳洲、欧洲码头工人工会谈判频繁，港口罢工风险影响正常装卸效率。
+        <div class="psrc">📎 国际港口协会 IAPH 2025年报</div>
+      </div>
+      <div class="pitem" style="background:#fffbeb">
+        <span class="plevel level-L">L</span>
+        <strong>供应链本地化趋势</strong><br>制造业"中国+1"战略推动东南亚/墨西哥工厂布局，改变近洋与远洋需求结构。
+        <div class="psrc">📎 麦肯锡《供应链韧性报告》2024</div>
+      </div>
+    </div>
+    <!-- T -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#7c3aed">T</div>
+        <h4>技术 Technology</h4>
+      </div>
+      <div class="pitem" style="background:#f5f3ff">
+        <span class="plevel level-H">H</span>
+        <strong>绿色燃料技术转型</strong><br>LNG双燃料、甲醇、氨燃料船舶订单量快速增长；2025年绿色船舶占新订单比例超60%。
+        <div class="psrc">📎 克拉克森研究 Clarksons 2026Q1 | <a href="https://www.clarksons.com" target="_blank">clarksons.com</a></div>
+      </div>
+      <div class="pitem" style="background:#f5f3ff">
+        <span class="plevel level-H">H</span>
+        <strong>数字化/AI运营优化</strong><br>马士基、ONE等推进AI调度、智能航线规划；COSCO LOGINK平台提升供应链可视化。
+        <div class="psrc">📎 马士基年报2025 | ONE官网</div>
+      </div>
+      <div class="pitem" style="background:#f5f3ff">
+        <span class="plevel level-M">M</span>
+        <strong>自动化港口普及</strong><br>青岛港、洋山港4期等全自动化码头运营成熟，人效大幅提升，部分港口已无人化作业。
+        <div class="psrc">📎 交通运输部 港口建设专项报告2025</div>
+      </div>
+    </div>
+    <!-- E(env) -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#0d8a6f">E</div>
+        <h4>环境 Environmental</h4>
+      </div>
+      <div class="pitem" style="background:#ecfdf5">
+        <span class="plevel level-H">H</span>
+        <strong>IMO碳排放法规收紧</strong><br>IMO EEXI/CII强制达标，不合规船舶面临限速降速或报废；2026年起EU-ETS将航运纳入碳交易。
+        <div class="psrc">📎 国际海事组织 IMO 官网 | <a href="https://www.imo.org" target="_blank">imo.org</a></div>
+      </div>
+      <div class="pitem" style="background:#ecfdf5">
+        <span class="plevel level-H">H</span>
+        <strong>欧盟碳边界调节机制(CBAM)</strong><br>2026年1月正式对欧出口相关商品征收碳关税，间接推动供应链重组，影响货量分布。
+        <div class="psrc">📎 欧盟官方公报 OJ 2023/956 | <a href="https://ec.europa.eu" target="_blank">ec.europa.eu</a></div>
+      </div>
+      <div class="pitem" style="background:#ecfdf5">
+        <span class="plevel level-M">M</span>
+        <strong>FuelEU Maritime法规</strong><br>欧盟2025年起要求停靠欧洲港口船舶使用低碳燃料混合比例，合规成本增加。
+        <div class="psrc">📎 欧盟FuelEU Maritime规则 2024/1781</div>
+      </div>
+    </div>
+    <!-- L -->
+    <div class="pestel-card">
+      <div class="phead">
+        <div class="pletter" style="background:#dc2626">L</div>
+        <h4>法律 Legal</h4>
+      </div>
+      <div class="pitem" style="background:#fef2f2">
+        <span class="plevel level-H">H</span>
+        <strong>反垄断调查压力</strong><br>欧盟、美国FMC持续关注班轮联盟定价行为；2M联盟已解散(2025)，P3/THE联盟重组。
+        <div class="psrc">📎 美国联邦海事委员会 FMC | <a href="https://www.fmc.gov" target="_blank">fmc.gov</a></div>
+      </div>
+      <div class="pitem" style="background:#fef2f2">
+        <span class="plevel level-M">M</span>
+        <strong>船员证书及劳工法规</strong><br>STCW公约修订，各国对外籍船员配额限制不一，影响人力成本结构。
+        <div class="psrc">📎 国际劳工组织 ILO MLC 2006(修订版)</div>
+      </div>
+      <div class="pitem" style="background:#fef2f2">
+        <span class="plevel level-M">M</span>
+        <strong>制裁与合规风险</strong><br>俄乌制裁导致部分货主绕开俄罗斯港口；ZIM等主动规避相关合规风险。
+        <div class="psrc">📎 美国OFAC制裁名单 | 欧盟理事会制裁数据库</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 4. 钻石模型 ══ -->
+<section class="section" id="diamond">
+  <div class="section-title">
+    <span class="icon">💎</span>
+    <h2>波特钻石模型 — 全球航运业竞争优势分析</h2>
+    <span class="badge">行业竞争力</span>
+  </div>
+  <div class="diamond-wrap">
+    <p style="font-size:13px;color:var(--gray5);margin-bottom:24px">波特钻石模型从六个维度分析全球集装箱航运业的国家/行业竞争优势</p>
+    <div class="diamond-grid">
+      <!-- Row1 -->
+      <div></div>
+      <div class="d-cell" style="background:#dbeafe">
+        <h4>🏭 生产要素条件</h4>
+        <ul>
+          <li>中国造船产能占全球47%（2025年），韩日合计~40%</li>
+          <li>亚洲港口基础设施密度全球最高</li>
+          <li>航运人才（上海海事大学、大连海事大学）储备充足</li>
+          <li>中国钢铁/配件低成本优势显著</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：中国船舶工业行业协会 2025</div>
+      </div>
+      <div></div>
+      <!-- Row2 -->
+      <div class="d-cell chance">
+        <h4>🌍 机会条件</h4>
+        <ul>
+          <li>红海危机推高运价，短期利好已运营船队</li>
+          <li>绿色航运转型窗口期（LNG/甲醇/氨燃料）</li>
+          <li>跨境电商增长带动快线需求</li>
+          <li>一带一路沿线港口投资机遇</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：UNCTAD 2025 | 商务部</div>
+      </div>
+      <div class="d-cell center">💎<br>钻石<br>模型<br>核心</div>
+      <div class="d-cell" style="background:#fce7f3">
+        <h4>🏢 企业战略、结构与竞争</h4>
+        <ul>
+          <li>TOP3(MSC/MSK/CMA)合计运力占比~47%，寡头垄断</li>
+          <li>联盟瓦解后单家竞争力分化加剧</li>
+          <li>中资(COSCO/OOCL)联合运营，规模效应强</li>
+          <li>ZIM/PIL等差异化定价策略突围</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：Alphaliner 2025Q4</div>
+      </div>
+      <!-- Row3 -->
+      <div></div>
+      <div class="d-cell govt">
+        <h4>🏛️ 政府作用</h4>
+        <ul>
+          <li>中国：财政补贴新能源船舶，推进国轮国货</li>
+          <li>韩国：HMM国资背景，政策支撑稳定</li>
+          <li>欧盟：EU-ETS碳交易对欧系运营商施压</li>
+          <li>美国：CHIPS法案带动半导体物流需求</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：工信部 | 韩国海洋水产部</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="two-col" style="margin-top:24px">
+      <div class="d-cell" style="background:#e0f2fe;padding:16px;border-radius:var(--r)">
+        <h4>📦 相关与支持性产业</h4>
+        <ul>
+          <li>造船业：中韩日三足鼎立，中国2025年接单量占55%</li>
+          <li>港口装卸：招商局港口、中远海运港口全球化布局</li>
+          <li>保险/金融：劳合社、PICC船舶保险覆盖</li>
+          <li>数字物流：CargoSmart、Portchain等科技赋能</li>
+          <li>集装箱制造：中集集团全球市占率~37%</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：中集集团年报2025 | 克拉克森</div>
+      </div>
+      <div class="d-cell" style="background:#ecfdf5;padding:16px;border-radius:var(--r)">
+        <h4>🎯 需求条件</h4>
+        <ul>
+          <li>全球集装箱贸易量约2.5亿TEU（2025E）</li>
+          <li>中美航线：全球最大单一双边贸易走廊</li>
+          <li>中欧航线：每周约 50+ 直挂班轮服务</li>
+          <li>亚洲近洋：因制造业转移，东南亚支线需求强劲</li>
+          <li>买方话语权提升，要求准班率/数字化可视化</li>
+        </ul>
+        <div style="font-size:10px;color:var(--gray4);margin-top:6px">来源：UNCTAD 2025 | 克拉克森</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 5. SWOT ══ -->
+<section class="section" id="swot">
+  <div class="section-title">
+    <span class="icon">⚡</span>
+    <h2>SWOT 战略分析</h2>
+    <span class="badge">可切换公司视角</span>
+  </div>
+  <p style="font-size:13px;color:var(--gray5);margin-bottom:16px">当前查看：<strong id="swotLabel">全行业概览</strong></p>
+  <div class="swot-grid" id="swotGrid">
+    <div class="swot-cell sw-s">
+      <h3>💪 优势 Strengths</h3>
+      <ul id="swot-s"></ul>
+    </div>
+    <div class="swot-cell sw-w">
+      <h3>⚠️ 劣势 Weaknesses</h3>
+      <ul id="swot-w"></ul>
+    </div>
+    <div class="swot-cell sw-o">
+      <h3>🌱 机会 Opportunities</h3>
+      <ul id="swot-o"></ul>
+    </div>
+    <div class="swot-cell sw-t">
+      <h3>🚨 威胁 Threats</h3>
+      <ul id="swot-t"></ul>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:24px">
+    <h3 style="padding:18px 20px 0">SWOT战略路径矩阵（SO/ST/WO/WT）</h3>
+    <table id="swotMatrix">
+      <thead>
+        <tr><th>维度</th><th>战略方向</th><th>具体举措</th><th>优先级</th></tr>
+      </thead>
+      <tbody id="swotMatrixBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 6. 季度财务数据 ══ -->
+<section class="section" id="finance">
+  <div class="section-title">
+    <span class="icon">💰</span>
+    <h2>季度财务数据（2023Q1–2026Q1）</h2>
+    <span class="badge">多公司对比</span>
+  </div>
+
+  <div class="fin-wrap">
+    <h3>主要船公司营收（亿美元）季度趋势</h3>
+    <p class="fin-note">数据来源：各公司官网/年报/季报（上市公司）、Alphaliner行业数据。标注(E)为估算值。上交所/港交所/NYSE/OSE已披露数据以公告为准。</p>
+    <div class="chart-canvas"><canvas id="revenueChart"></canvas></div>
+  </div>
+
+  <div class="fin-wrap" style="margin-top:20px">
+    <h3>EBIT利润率（%）季度趋势</h3>
+    <p class="fin-note">来源：各公司季报；MSK/HPL已在OSE/法兰克福交易所披露；COSCO/OOCL在A股/港股披露；EMC/YML/HMM/ZIM各自官网季报。</p>
+    <div class="chart-canvas"><canvas id="ebitChart"></canvas></div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:20px">
+    <h3>关键财务指标汇总表（最新5个季度）</h3>
+    <p class="fin-note" style="padding:0 20px 8px">单位：亿美元（营收）/ % （利润率）/ 万TEU（运量）；(E)=行业估算</p>
+    <table>
+      <thead>
+        <tr>
+          <th>公司</th>
+          <th>2025Q1</th>
+          <th>2025Q2(E)</th>
+          <th>2025Q3(E)</th>
+          <th>2025Q4</th>
+          <th>2026Q1(E)</th>
+          <th>主要指标</th>
+          <th>数据来源</th>
+        </tr>
+      </thead>
+      <tbody id="finTableBody">
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 7. MTL/LTC ══ -->
+<section class="section" id="mtl">
+  <div class="section-title">
+    <span class="icon">🔄</span>
+    <h2>MTL / LTC 销售运营流程</h2>
+    <span class="badge">Market to Lead / Lead to Cash</span>
+  </div>
+
+  <div class="flow-wrap" style="margin-bottom:24px">
+    <h3 style="margin-bottom:16px;color:var(--navy)">📣 MTL — Market to Lead（市场到线索）</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num">STEP 1</div>市场洞察<br>品牌曝光</div>
+      <div class="flow-step"><div class="step-num">STEP 2</div>内容营销<br>渠道触达</div>
+      <div class="flow-step"><div class="step-num">STEP 3</div>线索捕获<br>MQL筛选</div>
+      <div class="flow-step"><div class="step-num">STEP 4</div>线索评分<br>SQL转化</div>
+      <div class="flow-step"><div class="step-num">STEP 5</div>交接销售<br>漏斗录入</div>
+    </div>
+    <table class="flow-table">
+      <thead>
+        <tr><th>流程节点</th><th>核心活动</th><th>关键工具/平台</th><th>KPI指标</th><th>航运业实践</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>市场洞察 & 品牌曝光</strong></td><td>行业报告发布、展会（亚洲物流航运及空运会议APLF）、LinkedIn品牌内容、SCFI/运价追踪报告</td><td>Google Analytics、LinkedIn Campaign、行业数据库（Drewry/Alphaliner）</td><td>曝光量、品牌搜索指数、报告下载量</td><td>马士基发布《物流趋势报告》，CMA CGM赞助Logistics展会</td></tr>
+        <tr><td><strong>内容营销 & 渠道触达</strong></td><td>白皮书、航线方案简报、运价快讯邮件、港口准班率报告推送</td><td>HubSpot / Salesforce Marketing Cloud、企业微信、领英</td><td>邮件开启率 >25%、点击率 >4%、内容分享量</td><td>COSCO每月发布"COSCO物流月报"；MSK推出实时在线询价工具</td></tr>
+        <tr><td><strong>线索捕获 & MQL筛选</strong></td><td>在线询价表单、运费计算器、展会名片扫码、电话入呼、网站Live Chat</td><td>CRM（Salesforce/SAP CRM）、在线报价系统（eCommerce Booking）</td><td>线索转化率 >15%、MQL数量、CAC客户获取成本</td><td>HPL推出在线Booking平台，ZIM提供API接口对接货代系统</td></tr>
+        <tr><td><strong>线索评分 & SQL转化</strong></td><td>BANT评分（预算/权限/需求/时间）、货量/航线/价格敏感度打分</td><td>Lead Scoring模块、AI推荐引擎</td><td>SQL占比 >40%、评分准确率、漏斗丢失率</td><td>大型船公司依据货主货量、航线匹配度自动分级派单</td></tr>
+        <tr><td><strong>交接销售 & 漏斗录入</strong></td><td>SLA定义交接标准、CRM机会录入、销售培训SOB竞争分析</td><td>Salesforce Opportunity、钉钉/企业微信、内部Sales Portal</td><td>交接响应时间 <4h、机会录入完整率 >95%</td><td>MSK Sales Force全球统一CRM；COSCO内部"销售漏斗管理平台"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flow-wrap">
+    <h3 style="margin-bottom:16px;color:var(--navy)">💰 LTC — Lead to Cash（线索到回款）</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num">STEP 1</div>需求挖掘<br>方案制定</div>
+      <div class="flow-step"><div class="step-num">STEP 2</div>报价谈判<br>合同签订</div>
+      <div class="flow-step"><div class="step-num">STEP 3</div>订舱操作<br>履约执行</div>
+      <div class="flow-step"><div class="step-num">STEP 4</div>交付结算<br>账单开具</div>
+      <div class="flow-step"><div class="step-num">STEP 5</div>回款收款<br>客户续约</div>
+      <div class="flow-step"><div class="step-num">STEP 6</div>满意度管理<br>价值复购</div>
+    </div>
+    <table class="flow-table">
+      <thead>
+        <tr><th>流程节点</th><th>核心活动</th><th>关键工具/平台</th><th>KPI指标</th><th>航运业实践</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>需求挖掘 & 方案制定</strong></td><td>客户需求调研（货量/目的港/时效/特殊货物）、Routing建议、竞品运价比较、S&S方案设计</td><td>CargoSphere运价管理、内部Routing Tool、竞品运价监控系统</td><td>方案输出周期 <24h、方案命中率 >50%</td><td>马士基供应链4PL方案；CMA CGM"Complete Solution"综合物流报价</td></tr>
+        <tr><td><strong>报价谈判 & 合同签订</strong></td><td>运价协议(Service Contract)谈判、舱位保证条款、浮动附加费谈判（GRI/PSS/BAF）</td><td>CargoSphere / Xchange Transport、数字合同签署系统</td><td>合同签约率 >35%、谈判周期、合同收益率</td><td>THE联盟内部协调舱位分配；COSCO对大客户签订长约（Annual Contract）</td></tr>
+        <tr><td><strong>订舱操作 & 履约执行</strong></td><td>网上订舱(eBooking)、VGM重量确认、SI/BL签发、港口交接确认</td><td>内部TMS（运输管理系统）、ONE Portal / Maersk.com / CMA Connect</td><td>准班率(Schedule Reliability) >75%、船期变更通知率 >98%</td><td>Drewry数据：2025年主要船公司平均准班率约72%（绕行影响）</td></tr>
+        <tr><td><strong>交付结算 & 账单开具</strong></td><td>货物交付确认（POD）、Freight发票开具、争议条款处理、海关文件归档</td><td>ERP（SAP S/4HANA）、电子提单(e-B/L)、货代对账系统</td><td>账单准确率 >98%、开票周期 <3 workdays</td><td>马士基推广TradeLens区块链电子提单（已转型为DCSA标准）；港交所无纸化单据</td></tr>
+        <tr><td><strong>回款收款 & 账期管理</strong></td><td>应收账款追踪、预付款/月结账单、DSO（Days Sales Outstanding）优化</td><td>SAP AR模块、银行保函/LC管理、催收系统</td><td>DSO <30天、坏账率 <0.5%、回款率 >99%</td><td>ZIM大比例采用预付/短账期策略降低风险；HMM提供线上支付优惠</td></tr>
+        <tr><td><strong>满意度管理 & 复购</strong></td><td>NPS调研、投诉处理SLA、大客户QBR季度业务回顾、合同续签激励</td><td>Qualtrics/CRM Survey、客户健康度评分系统</td><td>NPS ≥45、大客户续约率 >85%、投诉处理率 100%</td><td>MSK设立"客户成功团队"专责大客户；COSCO推出"满意度积分"服务体系</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 8. 市场格局 ══ -->
+<section class="section" id="market">
+  <div class="section-title">
+    <span class="icon">📈</span>
+    <h2>市场格局分析</h2>
+    <span class="badge">竞争态势</span>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <h3>📊 TOP8船公司运力对比（万TEU，2025Q4）</h3>
+      <p class="chart-note">来源：Alphaliner Top100 2025Q4</p>
+      <div class="chart-canvas"><canvas id="capacityBarChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>🕸️ 竞争力雷达图（主要船公司）</h3>
+      <p class="chart-note">来源：综合Drewry/Alphaliner/各公司年报评估，满分10分</p>
+      <div class="chart-canvas"><canvas id="radarChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <h3>主要集装箱班轮联盟与合作关系（2025年）</h3>
+    <table>
+      <thead>
+        <tr><th>联盟/合作</th><th>成员</th><th>覆盖航线</th><th>合计运力占比</th><th>状态</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Gemini合作</strong></td>
+          <td><span class="tag blue">MSK</span> <span class="tag blue">HPL</span></td>
+          <td>欧线/美线/亚洲</td>
+          <td>~27%</td>
+          <td><span class="tag green">生效中</span></td>
+          <td>2025年2月正式启动，承诺90%准班率</td>
+        </tr>
+        <tr>
+          <td><strong>MSC独立运营</strong></td>
+          <td><span class="tag blue">MSC</span></td>
+          <td>全球</td>
+          <td>~20%</td>
+          <td><span class="tag green">独立运营</span></td>
+          <td>2025年初退出2M联盟后全面独立，运力快速扩张</td>
+        </tr>
+        <tr>
+          <td><strong>OCEAN联盟</strong></td>
+          <td><span class="tag gold">CMA CGM</span> <span class="tag gold">COSCO</span> <span class="tag gold">OOCL</span> <span class="tag gold">EMC</span></td>
+          <td>欧线/美线/亚洲</td>
+          <td>~29%</td>
+          <td><span class="tag green">生效中</span></td>
+          <td>2017年成立，协调舱位及港口挂靠</td>
+        </tr>
+        <tr>
+          <td><strong>THE联盟</strong></td>
+          <td><span class="tag purple">ONE</span> <span class="tag purple">YML</span> <span class="tag purple">HMM</span></td>
+          <td>欧线/美线</td>
+          <td>~14%</td>
+          <td><span class="tag green">运营中</span></td>
+          <td>2017成立，2025年协议续签至2030年</td>
+        </tr>
+        <tr>
+          <td><strong>ZIM独立</strong></td>
+          <td><span class="tag gray">ZIM</span></td>
+          <td>美线/部分亚洲</td>
+          <td>~2%</td>
+          <td><span class="tag gray">独立</span></td>
+          <td>差异化策略，与COSCO有舱位互换协议</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:10px;color:var(--gray4);padding:8px 20px">来源：FMC《2025年班轮联盟报告》 | <a href="https://www.fmc.gov" target="_blank">fmc.gov</a> | Alphaliner 2025Q4</p>
+  </div>
+
+  <div class="three-col" style="margin-top:20px">
+    <div class="chart-wrap" style="margin-bottom:0">
+      <h3>🌊 主要航线运价走势（2025Q1–2026Q1）</h3>
+      <p class="chart-note">来源：Drewry WCI，$/40ft集装箱</p>
+      <div class="chart-canvas-sm"><canvas id="routeRateChart"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0">
+      <h3>📦 全球新船订单量（万TEU，季度）</h3>
+      <p class="chart-note">来源：Clarksons Research 2026Q1</p>
+      <div class="chart-canvas-sm"><canvas id="orderChart"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0">
+      <h3>♻️ 绿色船舶占新订单比例</h3>
+      <p class="chart-note">来源：Clarksons Green Shipping Tracker 2026Q1</p>
+      <div class="chart-canvas-sm"><canvas id="greenChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 9. 战略建议 ══ -->
+<section class="section" id="strategy">
+  <div class="section-title">
+    <span class="icon">🎯</span>
+    <h2>战略建议 — 从市场洞察到战略解码</h2>
+    <span class="badge">三阶段路径</span>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <h3>🔵 Phase 1｜市场基础构建（0-6个月）</h3>
+      <ul>
+        <li>完成行业PESTEL/竞品数据库搭建，建立动态运价监控看板</li>
+        <li>识别目标客户群（大中型货主/货代），建立MQL线索池 ≥500条</li>
+        <li>签订至少2-3条核心航线服务协议（年合同）</li>
+        <li>部署CRM系统（Salesforce/钉钉），统一漏斗管理口径</li>
+      </ul>
+      <p style="margin-top:10px;font-size:12px;color:var(--gray4)">KPI：MQL数量、线索转化率 ≥15%、合同签约数</p>
+    </div>
+    <div class="card green">
+      <h3>🟢 Phase 2｜差异化竞争优化（6-18个月）</h3>
+      <ul>
+        <li>建立"运价+时效+服务"三维差异化定价体系</li>
+        <li>推出数字化客户门户（实时追踪、在线开单、AI客服）</li>
+        <li>落地Gemini/OCEAN联盟协议，优化舱位共享效率</li>
+        <li>绿色燃料试点（甲醇/LNG双燃料切换），领先ESG评级</li>
+      </ul>
+      <p style="margin-top:10px;font-size:12px;color:var(--gray4)">KPI：准班率 ≥80%、NPS ≥45、大客户续约率 ≥85%</p>
+    </div>
+    <div class="card gold">
+      <h3>🟡 Phase 3｜生态整合扩张（18-36个月）</h3>
+      <ul>
+        <li>向综合物流延伸（仓储/清关/末端），提升LTV客户价值</li>
+        <li>布局东南亚/南亚支线，承接制造业"中国+1"货量迁移</li>
+        <li>打通MTL-LTC全链路数字化，销售漏斗可视化BI看板上线</li>
+        <li>建立战略伙伴生态：货代、电商平台、跨境支付三方互联</li>
+      </ul>
+      <p style="margin-top:10px;font-size:12px;color:var(--gray4)">KPI：综合物流营收占比 ≥20%、新市场运量增长 ≥30%</p>
+    </div>
+    <div class="card red">
+      <h3>⚠️ 主要风险与应对</h3>
+      <ul>
+        <li><strong>运价下行：</strong>强化长约比例 ≥60%，降低现货敞口</li>
+        <li><strong>地缘风险：</strong>制定多路由备选方案，保持好望角绕行能力</li>
+        <li><strong>环保合规：</strong>提前布局碳排放台账，准备ETS购碳预算</li>
+        <li><strong>供给过剩：</strong>控制运力增速，推进联盟协调降空载率</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>📊 能力建设优先级</h3>
+      <ul>
+        <li>🔴 最高优先：数字化订舱/客户门户（90%）</li>
+        <li>🟠 高优先：CRM/销售漏斗统一管理（85%）</li>
+        <li>🟡 中优先：绿色燃料转型规划（75%）</li>
+        <li>🟢 常规推进：品牌&内容营销体系（65%）</li>
+      </ul>
+      <div class="chart-canvas-sm" style="margin-top:10px"><canvas id="priorityChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>📐 战略解码关键路径</h3>
+      <ul>
+        <li><strong>市场洞察 →</strong> PESTEL + 运价指数 + 竞品分析</li>
+        <li><strong>战略选择 →</strong> 钻石模型 + SWOT矩阵 + 联盟定位</li>
+        <li><strong>流程落地 →</strong> MTL漏斗管理 + LTC收款闭环</li>
+        <li><strong>结果追踪 →</strong> 季度财务KPI + BI看板监控</li>
+        <li><strong>迭代优化 →</strong> QBR客户评审 + NPS改善循环</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10. 数据来源 ══ -->
+<section class="section" id="sources">
+  <div class="section-title">
+    <span class="icon">📚</span>
+    <h2>数据来源 & 参考文献</h2>
+    <span class="badge">权威可验证</span>
+  </div>
+  <div class="sources-wrap">
+    <div class="src-group">
+      <h4>🏛️ 政府与国际组织</h4>
+      <div class="src-item"><span class="src-num">1</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>UNCTAD 航运评论2025</strong>｜联合国贸发会 ｜ <a href="https://unctad.org/topic/transport-and-trade-logistics/review-of-maritime-transport" target="_blank">unctad.org/maritime-transport-review</a></span></div>
+      <div class="src-item"><span class="src-num">2</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>交通运输部：2025年港口吞吐量统计公报</strong>｜中华人民共和国交通运输部 ｜ <a href="https://www.mot.gov.cn/tongjishuju/" target="_blank">mot.gov.cn/tongjishuju</a></span></div>
+      <div class="src-item"><span class="src-num">3</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>IMO 2023年GHG战略 (MEPC 80)</strong>｜国际海事组织 ｜ <a href="https://www.imo.org/en/MediaCentre/PressBriefings/pages/2023-GHG-Strategy.aspx" target="_blank">imo.org/GHG-Strategy</a></span></div>
+      <div class="src-item"><span class="src-num">4</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>WTO全球货物贸易预测2025-2026</strong>｜世界贸易组织 ｜ <a href="https://www.wto.org/english/res_e/statis_e/merch_trade_stat_e.htm" target="_blank">wto.org/trade-statistics</a></span></div>
+      <div class="src-item"><span class="src-num">5</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>FMC 2025年班轮联盟报告</strong>｜美国联邦海事委员会 ｜ <a href="https://www.fmc.gov" target="_blank">fmc.gov</a></span></div>
+      <div class="src-item"><span class="src-num">6</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>欧盟碳边界调节机制(CBAM) 2023/956</strong>｜欧盟官方公报 ｜ <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32023R0956" target="_blank">EUR-Lex</a></span></div>
+      <div class="src-item"><span class="src-num">7</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>巴拿马运河水位运营公告</strong>｜巴拿马运河管理局(ACP) ｜ <a href="https://www.pancanal.com" target="_blank">pancanal.com</a></span></div>
+    </div>
+
+    <div class="src-group">
+      <h4>📊 行业研究机构</h4>
+      <div class="src-item"><span class="src-num">8</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>Alphaliner Top100 月度运力报告（2025Q4）</strong>｜Alphaliner ｜ <a href="https://alphaliner.axsmarine.com/PublicPage/top100" target="_blank">alphaliner.axsmarine.com/top100</a></span></div>
+      <div class="src-item"><span class="src-num">9</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>Drewry World Container Index (WCI) 2026Q1</strong>｜德鲁里海运咨询 ｜ <a href="https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry" target="_blank">drewry.co.uk/WCI</a></span></div>
+      <div class="src-item"><span class="src-num">10</span><span class="src-text"><span class="src-type pay">付费报告</span> <strong>Clarksons Research季度集装箱市场报告 2026Q1</strong>｜克拉克森研究 ｜ <a href="https://www.clarksons.com" target="_blank">clarksons.com</a>（付费）</span></div>
+      <div class="src-item"><span class="src-num">11</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>上海航运交易所 SCFI 运价指数周报</strong>｜上海航运交易所 ｜ <a href="https://en.sse.net.cn/indices/scfinew.jsp" target="_blank">sse.net.cn/SCFI</a></span></div>
+      <div class="src-item"><span class="src-num">12</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>Freightos Baltic Index (FBX) 2026Q1</strong>｜Freightos ｜ <a href="https://fbx.freightos.com" target="_blank">fbx.freightos.com</a></span></div>
+      <div class="src-item"><span class="src-num">13</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>波罗的海干散货运价指数(BDI)</strong>｜波罗的海交易所 ｜ <a href="https://www.balticexchange.com" target="_blank">balticexchange.com</a></span></div>
+      <div class="src-item"><span class="src-num">14</span><span class="src-text"><span class="src-type auth">权威链接</span> <strong>VLSFO全球主要港口燃油价格</strong>｜Ship&Bunker ｜ <a href="https://shipandbunker.com/prices" target="_blank">shipandbunker.com/prices</a></span></div>
+    </div>
+
+    <div class="src-group">
+      <h4>🏢 上市公司官方披露</h4>
+      <div class="src-item"><span class="src-num">15</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>A.P. Moller-Maersk Q4 2024 & Full Year 2025 Annual Report</strong> ｜ <a href="https://investor.maersk.com" target="_blank">investor.maersk.com</a></span></div>
+      <div class="src-item"><span class="src-num">16</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>Hapag-Lloyd Q1 2025季报</strong>｜汉堡港交所/法兰克福交易所 ｜ <a href="https://www.hapag-lloyd.com/en/ir/publications.html" target="_blank">hapag-lloyd.com/IR</a></span></div>
+      <div class="src-item"><span class="src-num">17</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>中远海运控股 2025年年报</strong>｜上海证券交易所(601919) ｜ <a href="https://www.sse.com.cn" target="_blank">sse.com.cn</a></span></div>
+      <div class="src-item"><span class="src-num">18</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>东方海外国际 2025年中期报告</strong>｜香港联交所(0316.HK) ｜ <a href="https://www.hkex.com.hk" target="_blank">hkex.com.hk</a></span></div>
+      <div class="src-item"><span class="src-num">19</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>长荣海运2025年报</strong>｜台湾证交所(2603.TW) ｜ <a href="https://mops.twse.com.tw" target="_blank">mops.twse.com.tw</a></span></div>
+      <div class="src-item"><span class="src-num">20</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>ZIM季报及年报（2025）</strong>｜NYSE(ZIM) ｜ <a href="https://investors.zim.com" target="_blank">investors.zim.com</a></span></div>
+      <div class="src-item"><span class="src-num">21</span><span class="src-text"><span class="src-type off">官方资料</span> <strong>HMM 2025财年报告</strong>｜韩国证交所(011200.KS) ｜ <a href="https://www.hmm21.com/cms/business/engn/investment/index.jsp" target="_blank">hmm21.com/IR</a></span></div>
+      <div class="src-item"><span class="src-num">22</span><span class="src-text"><span class="src-type est">估算值</span> <strong>ONE/MSC/CMA CGM 财务数据</strong>｜以上三家未独立上市，数据综合Drewry/Alphaliner/行业报道估算，标注(E)</span></div>
+    </div>
+
+    <div class="src-group">
+      <h4>⚠️ 数据说明与免责</h4>
+      <div class="src-item" style="border:none;padding:12px;background:#fffbeb;border-radius:var(--r2)">
+        <span class="src-text" style="font-size:12px;color:#92400e">
+          标注(E)的数据为估算值，综合多方公开来源推算，仅供参考，不构成投资建议。<br>
+          运力排名以Alphaliner 2025Q4数据为准；财务数据以各公司最新官方披露为准，季度数据可能存在汇率换算差异（统一折算为美元）。<br>
+          本报告数据更新周期：季度更新（2026Q1为最新）。如需验证特定数据，请访问上方标注的权威来源链接。
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <strong>航运与物流公司可视化分析 V1.0</strong><br>
+  数据截至 2026年Q1 ｜ 数据来源：各公司官网、Alphaliner、Drewry、上海航运交易所、UNCTAD 等权威机构<br>
+  参考报告格式：<a href="https://caijiazongz.github.io/sea-logistics-report/" target="_blank">东南亚跨境物流深度分析报告</a> ｜
+  本报告仅供战略参考，不构成投资建议<br>
+  © 2026 航运与物流可视化分析项目
+</footer>
+
+<!-- ══ EXPORT BUTTONS ══ -->
+<div class="export-bar">
+  <button class="export-btn print" title="打印/导出PDF" onclick="window.print()">🖨️</button>
+  <button class="export-btn top" title="回到顶部" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️</button>
+</div>
+
+<!-- ══ SCRIPTS ══ -->
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const COMPANIES = [
+  {id:"MSK",name:"马士基航运 (MSK)",group:"eu",country:"🇩🇰 丹麦",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:1,teu:445,desc:"航运巨头，业务遍布全球，海运界领头羊；与HPL组成Gemini合作"},
+  {id:"MSC",name:"地中海航运 (MSC)",group:"eu",country:"🇨🇭 瑞士",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:2,teu:660,desc:"2025年超越MSK成为全球最大，600+艘船，运力强大"},
+  {id:"CMA",name:"达飞轮船 (CMA CGM)",group:"eu",country:"🇫🇷 法国",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:3,teu:372,desc:"家族企业，高效可靠，欧洲航线主力；OCEAN联盟核心成员"},
+  {id:"HPL",name:"赫伯罗特 (HPL)",group:"eu",country:"🇩🇪 德国",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:5,teu:213,desc:"HAPAG+NDL合并，世界五大集装箱船公司之一；Gemini联盟成员"},
+  {id:"COSCO",name:"中远海运 (COSCO)",group:"cn",country:"🇨🇳 中国大陆",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:4,teu:278,desc:"1961年成立，中国最大航运企业；OCEAN联盟核心成员（含OOCL）"},
+  {id:"OOCL",name:"东方海外 (OOCL)",group:"cn",country:"🇭🇰 中国香港",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:7,teu:118,desc:"历史悠久的班轮品牌，现为中远旗下，OCEAN联盟成员"},
+  {id:"EMC",name:"长荣海运 (EMC)",group:"cn",country:"🇨🇳 中国台湾",type:"集装箱班轮",routes:"欧线/美线/近洋",rank:6,teu:195,desc:"1968年成立，首开全货柜船队先例；OCEAN联盟成员"},
+  {id:"YML",name:"阳明海运 (YML)",group:"cn",country:"🇨🇳 中国台湾",type:"集装箱班轮",routes:"欧线/美线/近洋",rank:9,teu:86,desc:"1972年成立，船队平均船龄较年轻；THE联盟成员"},
+  {id:"WHL",name:"万海航运 (WHL)",group:"cn",country:"🇨🇳 中国台湾",type:"集装箱班轮",routes:"近洋（亚太）",rank:12,teu:48,desc:"亚太地区航线覆盖广泛，专注近洋支线，不参与远洋联盟"},
+  {id:"ONE",name:"海洋网联船务 (ONE)",group:"jpkr",country:"🇯🇵 日本",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:8,teu:156,desc:"2017年日系三家公司(MOL/NYK/K-Line)合资；THE联盟成员"},
+  {id:"HMM",name:"现代商船 (HMM)",group:"jpkr",country:"🇰🇷 韩国",type:"集装箱班轮",routes:"欧线/美线/全球干线",rank:10,teu:82,desc:"韩国最大，国资背景；THE联盟成员，2026年续约"},
+  {id:"ZIM",name:"以星航运 (ZIM)",group:"other",country:"🇮🇱 以色列",type:"集装箱班轮",routes:"美线/全球干线",rank:11,teu:62,desc:"全球主要集装箱航运公司，美线市场活跃；差异化定价策略"},
+  {id:"PIL",name:"太平船务 (PIL)",group:"other",country:"🇸🇬 新加坡",type:"集装箱班轮",routes:"近洋（亚非）",rank:13,teu:38,desc:"亚洲最大私营船公司之一，专注亚非支线市场"},
+];
+
+const GROUP_META = {
+  eu:    {label:"欧系",   color:"#1d4ed8",bg:"#dbeafe"},
+  cn:    {label:"中/港/台系",color:"#b45309",bg:"#fef9c3"},
+  jpkr:  {label:"日韩系", color:"#166534",bg:"#dcfce7"},
+  other: {label:"其他",   color:"#7c3aed",bg:"#f3e8ff"},
+};
+
+// SWOT data per company
+const SWOT_DATA = {
+  all:{
+    s:["TOP3(MSC/MSK/CMA)合计运力占比约47%，规模优势显著","中资(COSCO+OOCL+EMC)联盟协调，亚太航线覆盖最全","日韩系ONE+HMM凭借工程制造业背景，服务质量稳定","行业整体数字化水平显著提升（eBooking渗透率>80%）","全球港口网络覆盖完善，头部船公司挂靠港口数量均超200个"],
+    w:["运价高度受宏观经济与地缘政治左右，周期性波动大","绿色燃料转型成本高昂，短期压缩利润空间","供给过剩局面持续，在手订单/现有运力比仍达22.6%","中小船公司（PIL/YML/WHL）抗风险能力相对薄弱","班轮联盟碎片化导致协调效率下降"],
+    o:["红海绕行推升运价，有利于当前运营船队收益","绿色航运转型创造差异化竞争机会","跨境电商高速增长带来快运/快箱新需求","一带一路港口网络持续扩展，新兴市场潜力大","数字化物流平台整合，提升供应链价值"],
+    t:["SCFI运价下行压力：2026Q1约1380点，较高点下降63%","新船集中交付：全球在手订单占比22.6%，供给持续增加","欧盟EU-ETS碳成本：2026年正式对航运征收，增加欧线成本","中美贸易摩擦：关税政策不确定性扰动货量","反垄断监管加强：联盟定价受FMC/欧盟调查压力"]
+  },
+  MSK:{
+    s:["全球最大（即将被MSC超越），品牌认知度最高","Gemini合作承诺90%准班率，差异化服务","综合物流转型最深（仓储/清关/空运），收入多元化","数字化领先：Maersk.com平台实现全流程在线化"],
+    w:["2M联盟解散后单独运营成本上升","综合物流转型投入巨大，拖累短期利润率","高运力对应高固定成本，运价下行时利润率下滑明显"],
+    o:["Gemini准班率差异化吸引高价值货主","综合物流4PL整合进一步提升客户粘性","绿色甲醇船队全球最大，EU-ETS竞争优势"],
+    t:["MSC独立运营激进扩张，运力压制","运价继续下行压缩综合物流利润","OCEAN联盟船公司组合服务分流部分货量"]
+  },
+  COSCO:{
+    s:["中国最大，国资背景，政策支持稳固","OCEAN联盟协同（+OOCL+CMA CGM+EMC），航线覆盖最广","中国港口资源（上港集团战略合作），装卸成本优势","LOGINK平台推进供应链数字化"],
+    w:["国资机构决策周期较长，创新响应偏慢","品牌国际化形象有待提升","部分航线受地缘政治影响（美国货主顾虑）"],
+    o:["一带一路港口投资协同运营","国内跨境电商货量持续增长","绿色船舶政策补贴支持新船建造"],
+    t:["中美贸易摩擦导致美线货量波动","欧美对中资航运安全审查趋严","运价下行压缩国轮利润，分红压力上升"]
+  },
+  ZIM:{
+    s:["差异化策略灵活，不依赖固定联盟","美线市场专注，市占率持续提升","轻资产模式（大量租船），资本支出低","现金流管理能力强，高分红政策"],
+    w:["运力规模小（约62万TEU），谈判话语权有限","高度依赖美线，航线集中度风险大","以色列地缘政治风险影响形象"],
+    o:["美线关税博弈短期推高货主提前备货需求","数字化API接口对接货代，获客成本低","快件/电商专线拓展差异化服务"],
+    t:["美联储加息拖累美国消费，美线需求回落","中东局势影响地中海东段运营","大船公司以低价抢占美线市场份额"]
+  }
+};
+
+const SWOT_MATRIX = {
+  all:[
+    {dim:"SO（优势+机会）",dir:"运力扩张+绿色升级",action:"利用规模优势加快绿色船舶订单，占领EU-ETS低碳溢价市场","pri":"★★★"},
+    {dim:"SO（优势+机会）",dir:"数字化生态整合",action:"推进eBooking/智能物流平台，提升货主体验与粘性","pri":"★★★"},
+    {dim:"ST（优势+威胁）",dir:"联盟协调稳定舱位",action:"强化OCEAN/Gemini/THE联盟内协调，控制供给增速，稳定运价","pri":"★★★"},
+    {dim:"ST（优势+威胁）",dir:"长约比例提升",action:"推进年合约/SC合同比例至60%以上，降低现货价格敞口","pri":"★★"},
+    {dim:"WO（劣势+机会）",dir:"绿色转型弥补合规劣势",action:"中小船公司（YML/WHL）通过租赁绿色船舶快速达到CII标准","pri":"★★"},
+    {dim:"WT（劣势+威胁）",dir:"收缩规模保利润",action:"淘汰高龄/高油耗船舶，优化航线组合，降低空载率","pri":"★★"},
+  ]
+};
+
+// Finance data
+const QUARTERS = ["2024Q1","2024Q2","2024Q3","2024Q4","2025Q1","2025Q2(E)","2025Q3(E)","2025Q4(E)","2026Q1(E)"];
+const REVENUE_DATA = {
+  MSK:   [135,138,148,130,142,135,128,132,130],
+  CMA:   [125,130,142,128,138,133,127,129,126],
+  COSCO: [81, 85, 96, 88, 92, 88, 84, 86, 83],
+  HPL:   [55, 58, 68, 62, 72, 68, 64, 66, 63],
+  ONE:   [48, 50, 58, 54, 60, 57, 53, 55, 52],
+  HMM:   [22, 24, 28, 26, 30, 28, 26, 27, 25],
+  ZIM:   [18, 19, 24, 22, 28, 25, 22, 23, 21],
+};
+const EBIT_DATA = {
+  MSK:   [8,  9,  14, 11, 13, 11, 9,  10, 9],
+  CMA:   [11, 12, 16, 13, 14, 12, 10, 11, 10],
+  COSCO: [12, 14, 18, 15, 17, 15, 13, 14, 13],
+  HPL:   [9,  10, 16, 13, 18, 16, 13, 14, 12],
+  ZIM:   [6,  7,  18, 14, 22, 18, 12, 14, 10],
+};
+
+const FIN_TABLE = [
+  {co:"马士基 (MSK)",q1_25:"142",q2_25:"135(E)",q3_25:"128(E)",q4_25:"132(E)",q1_26:"130(E)",metric:"营收（亿$），利润率~9%",src:"investor.maersk.com"},
+  {co:"达飞 (CMA CGM)",q1_25:"138",q2_25:"133(E)",q3_25:"127(E)",q4_25:"129(E)",q1_26:"126(E)",metric:"营收（亿$），利润率~10%",src:"cmacgm.com/finances"},
+  {co:"中远海运 (COSCO)",q1_25:"92",q2_25:"88(E)",q3_25:"84(E)",q4_25:"86(E)",q1_26:"83(E)",metric:"营收（亿$），利润率~13%",src:"sse.com.cn (601919)"},
+  {co:"赫伯罗特 (HPL)",q1_25:"72",q2_25:"68(E)",q3_25:"64(E)",q4_25:"66(E)",q1_26:"63(E)",metric:"营收（亿$），利润率~18%",src:"hapag-lloyd.com/IR"},
+  {co:"海洋网联 (ONE)",q1_25:"60",q2_25:"57(E)",q3_25:"53(E)",q4_25:"55(E)",q1_26:"52(E)",metric:"营收（亿$），利润率~15%(E)",src:"one-line.com (非上市)"},
+  {co:"现代商船 (HMM)",q1_25:"30",q2_25:"28(E)",q3_25:"26(E)",q4_25:"27(E)",q1_26:"25(E)",metric:"营收（亿$），利润率~12%",src:"hmm21.com/IR"},
+  {co:"以星航运 (ZIM)",q1_25:"28",q2_25:"25(E)",q3_25:"22(E)",q4_25:"23(E)",q1_26:"21(E)",metric:"营收（亿$），利润率~22%",src:"investors.zim.com"},
+  {co:"长荣海运 (EMC)",q1_25:"25",q2_25:"24(E)",q3_25:"22(E)",q4_25:"23(E)",q1_26:"22(E)",metric:"营收（亿$），利润率~11%",src:"evergreen-marine.com"},
+];
+
+// ─────────────────────────────────────────────
+// RENDER COMPANY TABLE
+// ─────────────────────────────────────────────
+function renderCompanyTable() {
+  const tbody = document.getElementById("companyTableBody");
+  tbody.innerHTML = "";
+  COMPANIES.forEach((c, i) => {
+    const gm = GROUP_META[c.group];
+    const tr = document.createElement("tr");
+    tr.dataset.group = c.group;
+    tr.innerHTML = `
+      <td style="text-align:center;color:var(--gray4);font-size:12px">${c.rank}</td>
+      <td><strong>${c.name}</strong></td>
+      <td><span class="tag" style="background:${gm.bg};color:${gm.color}">${gm.label}</span></td>
+      <td>${c.country}</td>
+      <td><span class="tag blue">${c.type}</span></td>
+      <td>${c.routes.split("/").map(r=>`<span class="tag gray" style="margin:1px">${r}</span>`).join(" ")}</td>
+      <td style="text-align:center;font-weight:700;color:var(--navy)">${c.rank}</td>
+      <td style="text-align:center"><span style="font-weight:700">${c.teu}</span></td>
+      <td style="font-size:12px;color:var(--gray5)">${c.desc}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ─────────────────────────────────────────────
+// SWOT RENDER
+// ─────────────────────────────────────────────
+function renderSWOT(id) {
+  const data = SWOT_DATA[id] || SWOT_DATA.all;
+  const label = id === "all" ? "全行业概览" : (COMPANIES.find(c=>c.id===id)||{name:id}).name;
+  document.getElementById("swotLabel").textContent = label;
+  ["s","w","o","t"].forEach(k => {
+    const el = document.getElementById("swot-"+k);
+    el.innerHTML = (data[k]||[]).map(x=>`<li>${x}</li>`).join("");
+  });
+  const matrix = SWOT_MATRIX[id] || SWOT_MATRIX.all;
+  const mb = document.getElementById("swotMatrixBody");
+  mb.innerHTML = matrix.map(m=>`<tr>
+    <td><span class="tag blue">${m.dim}</span></td>
+    <td><strong>${m.dir}</strong></td>
+    <td style="font-size:12px">${m.action}</td>
+    <td><span class="tag ${m.pri.length>=3?'green':'gold'}">${m.pri}</span></td>
+  </tr>`).join("");
+}
+
+// ─────────────────────────────────────────────
+// FINANCE TABLE
+// ─────────────────────────────────────────────
+function renderFinTable() {
+  const tb = document.getElementById("finTableBody");
+  tb.innerHTML = FIN_TABLE.map(f=>`<tr>
+    <td class="metric-label">${f.co}</td>
+    <td>${f.q1_25}</td>
+    <td class="na-val">${f.q2_25}</td>
+    <td class="na-val">${f.q3_25}</td>
+    <td class="na-val">${f.q4_25}</td>
+    <td class="na-val">${f.q1_26}</td>
+    <td style="font-size:11px;color:var(--gray5)">${f.metric}</td>
+    <td style="font-size:11px"><a href="https://${f.src.startsWith('http')?f.src.replace('https://',''):f.src}" target="_blank">${f.src}</a></td>
+  </tr>`).join("");
+}
+
+// ─────────────────────────────────────────────
+// COMPANY SWITCH
+// ─────────────────────────────────────────────
+function switchCompany(id) {
+  renderSWOT(id);
+}
+
+function filterGroup(g) {
+  const pills = document.querySelectorAll(".gpill");
+  const pill = document.querySelector(`.gpill.${g}`);
+  const isActive = pill.classList.contains("active");
+  pill.classList.toggle("active");
+  const activePills = document.querySelectorAll(".gpill.active");
+  const activeGroups = [...activePills].map(p => [...p.classList].find(c=>["eu","cn","jpkr","other"].includes(c)));
+  document.querySelectorAll("#companyTableBody tr").forEach(tr => {
+    tr.style.display = activeGroups.includes(tr.dataset.group) ? "" : "none";
+  });
+}
+
+// ─────────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────────
+const C = (id,type,data,opts={})=>{
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  return new Chart(ctx, {type, data, options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{family:"'Microsoft YaHei',sans-serif",size:12},boxWidth:12}}, tooltip:{callbacks:{}}},
+    ...opts
+  }});
+};
+
+// SCFI trend
+C("scfiChart","line",{
+  labels:["2023Q1","2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3","2024Q4","2025Q1","2025Q2","2025Q3","2025Q4","2026Q1"],
+  datasets:[{
+    label:"SCFI综合指数",
+    data:[1040,982,958,1012,1580,2180,3733,2860,1920,1640,1450,1310,1380],
+    borderColor:"#1d6fa4",backgroundColor:"rgba(29,111,164,.15)",fill:true,tension:.4,pointRadius:4
+  }]
+},{scales:{y:{beginAtZero:false,title:{display:true,text:"指数（点）",font:{size:11}}},x:{ticks:{font:{size:11}}}}});
+
+// Capacity pie
+C("capacityPieChart","doughnut",{
+  labels:["MSC (22%)", "MSK (15%)", "CMA CGM (12%)", "COSCO+OOCL (13%)", "HPL (7%)", "ONE (5%)", "其他 (26%)"],
+  datasets:[{data:[22,15,12,13,7,5,26],backgroundColor:["#1d4ed8","#2489c8","#1d6fa4","#c0860a","#dc2626","#166534","#d1dae8"],borderWidth:2,borderColor:"#fff"}]
+});
+
+// Revenue chart
+C("revenueChart","line",{
+  labels:QUARTERS,
+  datasets:[
+    {label:"MSK",data:REVENUE_DATA.MSK,borderColor:"#2489c8",backgroundColor:"rgba(36,137,200,.1)",tension:.4,fill:false,pointRadius:3},
+    {label:"CMA CGM",data:REVENUE_DATA.CMA,borderColor:"#1d4ed8",backgroundColor:"rgba(29,78,216,.1)",tension:.4,fill:false,pointRadius:3},
+    {label:"COSCO",data:REVENUE_DATA.COSCO,borderColor:"#c0860a",backgroundColor:"rgba(192,134,10,.1)",tension:.4,fill:false,pointRadius:3},
+    {label:"HPL",data:REVENUE_DATA.HPL,borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,.1)",tension:.4,fill:false,pointRadius:3},
+    {label:"ZIM",data:REVENUE_DATA.ZIM,borderColor:"#7c3aed",backgroundColor:"rgba(124,58,237,.1)",tension:.4,fill:false,pointRadius:3},
+  ]
+},{scales:{y:{title:{display:true,text:"亿美元",font:{size:11}}},x:{ticks:{font:{size:11}}}}});
+
+// EBIT chart
+C("ebitChart","line",{
+  labels:QUARTERS,
+  datasets:[
+    {label:"MSK EBIT率",data:EBIT_DATA.MSK,borderColor:"#2489c8",tension:.4,fill:false,pointRadius:3},
+    {label:"CMA EBIT率",data:EBIT_DATA.CMA,borderColor:"#1d4ed8",tension:.4,fill:false,pointRadius:3},
+    {label:"COSCO EBIT率",data:EBIT_DATA.COSCO,borderColor:"#c0860a",tension:.4,fill:false,pointRadius:3},
+    {label:"HPL EBIT率",data:EBIT_DATA.HPL,borderColor:"#dc2626",tension:.4,fill:false,pointRadius:3},
+    {label:"ZIM EBIT率",data:EBIT_DATA.ZIM,borderColor:"#7c3aed",tension:.4,fill:false,pointRadius:3},
+  ]
+},{scales:{y:{title:{display:true,text:"%",font:{size:11}},min:0,max:30},x:{ticks:{font:{size:11}}}}});
+
+// Capacity bar
+C("capacityBarChart","bar",{
+  labels:["MSC","MSK","CMA","COSCO","HPL","ONE","EMC","HMM"],
+  datasets:[{
+    label:"运力（万TEU）",
+    data:[660,445,372,278,213,156,195,82],
+    backgroundColor:["#1d4ed8","#2489c8","#1d6fa4","#c0860a","#dc2626","#166534","#b45309","#7c3aed"],
+    borderRadius:4
+  }]
+},{scales:{y:{title:{display:true,text:"万TEU",font:{size:11}}},x:{ticks:{font:{size:11}}}}});
+
+// Radar
+C("radarChart","radar",{
+  labels:["运力规模","航线覆盖","数字化","绿色合规","准班率","客服质量"],
+  datasets:[
+    {label:"MSK",data:[8,9,9,9,9,8],borderColor:"#2489c8",backgroundColor:"rgba(36,137,200,.15)"},
+    {label:"MSC",data:[10,10,7,7,7,7],borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,.1)"},
+    {label:"COSCO",data:[9,9,8,7,7,7],borderColor:"#c0860a",backgroundColor:"rgba(192,134,10,.1)"},
+    {label:"ONE",data:[6,7,8,7,8,8],borderColor:"#166534",backgroundColor:"rgba(22,101,52,.1)"},
+  ]
+},{scales:{r:{min:0,max:10,ticks:{stepSize:2,font:{size:10}},pointLabels:{font:{size:11}}}}});
+
+// Route rates
+const routeQs = ["2025Q1","2025Q2","2025Q3","2025Q4","2026Q1"];
+C("routeRateChart","line",{
+  labels:routeQs,
+  datasets:[
+    {label:"欧线($/TEU)",data:[3200,2800,2400,2050,2150],borderColor:"#1d4ed8",tension:.4,fill:false,pointRadius:4},
+    {label:"美西线($/FEU)",data:[4200,3900,3600,3700,3820],borderColor:"#dc2626",tension:.4,fill:false,pointRadius:4},
+    {label:"亚洲近洋($/TEU)",data:[480,460,420,400,410],borderColor:"#166534",tension:.4,fill:false,pointRadius:4},
+  ]
+},{scales:{y:{title:{display:true,text:"$/箱",font:{size:11}}}}});
+
+// Order chart
+C("orderChart","bar",{
+  labels:["2024Q1","2024Q2","2024Q3","2024Q4","2025Q1","2025Q2","2025Q3","2025Q4","2026Q1"],
+  datasets:[{label:"新船订单（万TEU）",data:[62,48,55,70,58,45,42,50,38],backgroundColor:"rgba(29,111,164,.7)",borderRadius:4}]
+},{scales:{y:{title:{display:true,text:"万TEU",font:{size:11}}}}});
+
+// Green chart
+C("greenChart","bar",{
+  labels:["2022","2023","2024","2025","2026Q1(E)"],
+  datasets:[
+    {label:"LNG双燃料",data:[28,38,45,52,55],backgroundColor:"rgba(29,111,164,.8)",borderRadius:3},
+    {label:"甲醇/绿氨",data:[2,5,12,20,25],backgroundColor:"rgba(13,138,111,.8)",borderRadius:3},
+    {label:"传统燃油",data:[70,57,43,28,20],backgroundColor:"rgba(180,83,9,.5)",borderRadius:3},
+  ]
+},{scales:{y:{stacked:true,max:100,title:{display:true,text:"%",font:{size:11}}},x:{stacked:true}}});
+
+// Priority chart
+C("priorityChart","bar",{
+  labels:["数字化订舱","CRM漏斗管理","绿色燃料转型","内容营销体系"],
+  datasets:[{
+    label:"优先级(%)",
+    data:[90,85,75,65],
+    backgroundColor:["#dc2626","#d97706","#166534","#2489c8"],
+    borderRadius:4,
+    indexAxis:"y"
+  }]
+},{indexAxis:"y",scales:{x:{max:100,title:{display:true,text:"%",font:{size:11}}}}});
+
+// ─────────────────────────────────────────────
+// NAV ACTIVE HIGHLIGHT
+// ─────────────────────────────────────────────
+const navLinks = document.querySelectorAll(".nav a");
+const sections = document.querySelectorAll(".section");
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(l=>l.classList.remove("active"));
+      const id = e.target.id;
+      const link = document.querySelector(`.nav a[href="#${id}"]`);
+      if(link) link.classList.add("active");
+    }
+  });
+},{rootMargin:"-100px 0px -70% 0px"});
+sections.forEach(s=>observer.observe(s));
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+renderCompanyTable();
+renderSWOT("all");
+renderFinTable();
+</script>
+</body>
+</html>
