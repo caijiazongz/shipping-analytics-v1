@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "description": "所有航线的元数据定义，供前端动态渲染用",
+    "version": "V1.3-data",
+    "last_updated": "2026-06-12"
+  },
+  "route_groups": {
+    "major_routes": {
+      "label": "主力航线",
+      "label_en": "Major Routes",
+      "description": "SCFI 权重最高的四大航线，占综合指数 57.5%",
+      "routes": ["europe_20ft", "mediterranean_20ft", "uswc_40ft", "usec_40ft"]
+    },
+    "africa_routes": {
+      "label": "非洲航线 (V1.3 新增)",
+      "label_en": "Africa Routes (V1.3 New)",
+      "description": "覆盖西非、南非、东非三条航线",
+      "routes": ["west_africa_lagos_20ft", "south_africa_durban_20ft", "east_africa_mombasa_20ft"]
+    },
+    "south_america_routes": {
+      "label": "南美航线 (V1.3 新增)",
+      "label_en": "South America Routes (V1.3 New)",
+      "description": "覆盖南美东(桑托斯)和南美西(曼萨尼约)",
+      "routes": ["south_america_santos_20ft", "south_america_santos_40ft", "central_sa_manzanillo_20ft", "central_sa_manzanillo_40ft"]
+    },
+    "intra_asia_routes": {
+      "label": "亚洲区域内航线",
+      "label_en": "Intra-Asia Routes",
+      "description": "日本、韩国、东南亚近洋航线",
+      "routes": ["japan_west_20ft", "japan_east_20ft", "korea_20ft", "se_asia_20ft"]
+    },
+    "other_routes": {
+      "label": "其他远洋航线",
+      "label_en": "Other Deep-Sea Routes",
+      "description": "波斯湾、澳新航线",
+      "routes": ["persian_gulf_20ft", "australia_20ft"]
+    }
+  },
+  "route_details": {
+    "europe_20ft": {
+      "name": "欧洲 20ft",
+      "name_en": "Europe 20ft",
+      "origin": "上海",
+      "destination": "汉堡/鹿特丹/安特卫普/勒阿弗尔",
+      "unit": "USD/TEU",
+      "weight_pct": 20.0,
+      "group": "major_routes",
+      "is_new": false
+    },
+    "mediterranean_20ft": {
+      "name": "地中海 20ft",
+      "name_en": "Mediterranean 20ft",
+      "origin": "上海",
+      "destination": "巴塞罗那/瓦伦西亚/热那亚",
+      "unit": "USD/TEU",
+      "weight_pct": 10.0,
+      "group": "major_routes",
+      "is_new": false
+    },
+    "uswc_40ft": {
+      "name": "美西 40ft",
+      "name_en": "US West Coast 40ft",
+      "origin": "上海",
+      "destination": "洛杉矶/长滩/奥克兰",
+      "unit": "USD/FEU",
+      "weight_pct": 20.0,
+      "group": "major_routes",
+      "is_new": false
+    },
+    "usec_40ft": {
+      "name": "美东 40ft",
+      "name_en": "US East Coast 40ft",
+      "origin": "上海",
+      "destination": "纽约/萨凡纳/诺福克",
+      "unit": "USD/FEU",
+      "weight_pct": 7.5,
+      "group": "major_routes",
+      "is_new": false
+    },
+    "west_africa_lagos_20ft": {
+      "name": "西非 (拉各斯)",
+      "name_en": "West Africa (Lagos)",
+      "origin": "上海",
+      "destination": "拉各斯/阿帕帕(尼日利亚)",
+      "unit": "USD/TEU",
+      "weight_pct": 2.5,
+      "group": "africa_routes",
+      "is_new": true
+    },
+    "south_africa_durban_20ft": {
+      "name": "南非 (德班)",
+      "name_en": "South Africa (Durban)",
+      "origin": "上海",
+      "destination": "德班(南非)",
+      "unit": "USD/TEU",
+      "weight_pct": 2.5,
+      "group": "africa_routes",
+      "is_new": true
+    },
+    "east_africa_mombasa_20ft": {
+      "name": "东非 (蒙巴萨)",
+      "name_en": "East Africa (Mombasa)",
+      "origin": "上海",
+      "destination": "蒙巴萨(肯尼亚)",
+      "unit": "USD/TEU",
+      "weight_pct": 0.0,
+      "group": "africa_routes",
+      "is_new": true
+    },
+    "south_america_santos_20ft": {
+      "name": "南美东 (桑托斯)",
+      "name_en": "South America East (Santos)",
+      "origin": "上海",
+      "destination": "桑托斯(巴西)",
+      "unit": "USD/TEU",
+      "weight_pct": 5.0,
+      "group": "south_america_routes",
+      "is_new": false
+    },
+    "central_sa_manzanillo_20ft": {
+      "name": "南美西 (曼萨尼约)",
+      "name_en": "South America West (Manzanillo)",
+      "origin": "上海",
+      "destination": "曼萨尼约(墨西哥)",
+      "unit": "USD/TEU",
+      "weight_pct": 0.0,
+      "group": "south_america_routes",
+      "is_new": true
+    }
+  }
+}

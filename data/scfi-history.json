@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "description": "SCFI 综合指数历史周度数据，用于同比(YoY)对比和趋势分析",
+    "data_source": "StockQ.org (scraped 2026-06-12) · 上海航运交易所官方发布",
+    "update_frequency": "每周五 GitHub Actions 自动追加本周数据",
+    "first_recorded": "2025-11-21",
+    "last_updated": "2026-06-12",
+    "total_weeks": 20,
+    "version": "V1.3-data",
+    "note": "历史数据通过 StockQ.org 历史页面抓取。分航线历史数据待 Phase 3 爬虫脚本实现后自动补全。"
+  },
+  "scfi_weekly": [
+    {"date": "2025-11-21", "value": 1393.56, "week": "2025-W47"},
+    {"date": "2025-12-05", "value": 1397.63, "week": "2025-W49"},
+    {"date": "2026-01-23", "value": 1457.86, "week": "2026-W04"},
+    {"date": "2026-02-02", "value": 1316.75, "week": "2026-W05"},
+    {"date": "2026-02-06", "value": 1266.56, "week": "2026-W06"},
+    {"date": "2026-02-09", "value": 1266.56, "week": "2026-W07"},
+    {"date": "2026-02-13", "value": 1251.46, "week": "2026-W07"},
+    {"date": "2026-03-02", "value": 1333.11, "week": "2026-W10"},
+    {"date": "2026-03-06", "value": 1489.19, "week": "2026-W10"},
+    {"date": "2026-03-13", "value": 1710.35, "week": "2026-W11"},
+    {"date": "2026-03-30", "value": 1826.77, "week": "2026-W14"},
+    {"date": "2026-04-03", "value": 1854.96, "week": "2026-W14"},
+    {"date": "2026-04-06", "value": 1854.96, "week": "2026-W15"},
+    {"date": "2026-04-10", "value": 1890.77, "week": "2026-W15"},
+    {"date": "2026-04-24", "value": 1875.26, "week": "2026-W17"},
+    {"date": "2026-04-27", "value": 1875.26, "week": "2026-W18"},
+    {"date": "2026-05-08", "value": 1954.21, "week": "2026-W19"},
+    {"date": "2026-05-15", "value": 2140.66, "week": "2026-W20"},
+    {"date": "2026-05-25", "value": 2218.15, "week": "2026-W22"},
+    {"date": "2026-06-05", "value": 2726.48, "week": "2026-W23"}
+  ],
+  "bdi_daily": [
+    {"date": "2026-06-01", "value": 3222},
+    {"date": "2026-06-02", "value": 3205},
+    {"date": "2026-06-03", "value": 3124},
+    {"date": "2026-06-04", "value": 3037},
+    {"date": "2026-06-05", "value": 2981},
+    {"date": "2026-06-08", "value": 2916},
+    {"date": "2026-06-09", "value": 2818},
+    {"date": "2026-06-10", "value": 2771},
+    {"date": "2026-06-11", "value": 2729}
+  ],
+  "year_over_year": {
+    "2026-W23": {
+      "scfi": 2726.48,
+      "prior_year_week": "2025-W23",
+      "prior_year_value": null,
+      "note": "2025年同周数据待补录。StockQ.org 历史页面仅回退至2025-11-21。"
+    }
+  },
+  "scfi_annual_stats": {
+    "2025": {
+      "year_end": 1397.63,
+      "year_change_pct": -43.19,
+      "source": "StockQ.org"
+    },
+    "2024": {
+      "year_change_pct": 124.99,
+      "source": "StockQ.org"
+    },
+    "2023": {
+      "year_change_pct": -1.27,
+      "source": "StockQ.org"
+    },
+    "2022": {
+      "year_change_pct": -78.05,
+      "source": "StockQ.org"
+    }
+  }
+}

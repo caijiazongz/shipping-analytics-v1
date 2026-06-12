@@ -1,0 +1,361 @@
+{
+  "meta": {
+    "data_source": "上海航运交易所 (SSE) via StockQ.org · wtis.mot.gov.cn · 国际船舶网 · Drewry",
+    "data_pull_date": "2026-06-12",
+    "report_week": "2026-W24",
+    "report_date": "2026-06-12",
+    "next_update": "2026-06-19 (周五)",
+    "notes": "SCFI 每周五发布，数据反映截至周四的即期市场运价。非洲及南美西航线为独立追踪航线，纳入本看板。",
+    "version": "V1.3-data"
+  },
+  "scfi": {
+    "composite_index": {
+      "current": 2726.48,
+      "previous": 2571.73,
+      "wow_change": 154.75,
+      "wow_pct": 6.02,
+      "unit": "index points",
+      "base": "2009-10-16 = 1000"
+    }
+  },
+  "routes": {
+    "europe_20ft": {
+      "name": "欧洲 (基本港)",
+      "name_en": "Europe (Base Ports)",
+      "route_code": "EUR20",
+      "unit": "USD/TEU",
+      "weight_pct": 20.0,
+      "current": 2605,
+      "previous": 2475,
+      "wow_change": 130,
+      "wow_pct": 5.25,
+      "data_status": "real",
+      "source": "上海航运交易所 SCFI 6月5日报告"
+    },
+    "europe_40ft": {
+      "name": "欧洲 40ft (基本港)",
+      "name_en": "Europe 40ft (Base Ports)",
+      "route_code": "EUR40",
+      "unit": "USD/FEU",
+      "weight_pct": 0.0,
+      "current": 4342,
+      "previous": 4157,
+      "wow_change": 185,
+      "wow_pct": 4.45,
+      "data_status": "real",
+      "source": "雪球 · 上海航运交易所"
+    },
+    "mediterranean_20ft": {
+      "name": "地中海 (基本港)",
+      "name_en": "Mediterranean (Base Ports)",
+      "route_code": "MED20",
+      "unit": "USD/TEU",
+      "weight_pct": 10.0,
+      "current": 3832,
+      "previous": 3750,
+      "wow_change": 82,
+      "wow_pct": 2.19,
+      "data_status": "real",
+      "source": "上海航运交易所 SCFI 6月5日报告"
+    },
+    "mediterranean_40ft": {
+      "name": "地中海 40ft (基本港)",
+      "name_en": "Mediterranean 40ft (Base Ports)",
+      "route_code": "MED40",
+      "unit": "USD/FEU",
+      "weight_pct": 0.0,
+      "current": 5351,
+      "previous": 5274,
+      "wow_change": 77,
+      "wow_pct": 1.46,
+      "data_status": "real",
+      "source": "雪球 · 上海航运交易所"
+    },
+    "uswc_40ft": {
+      "name": "美西 (基本港)",
+      "name_en": "US West Coast (Base Ports)",
+      "route_code": "USWC",
+      "unit": "USD/FEU",
+      "weight_pct": 20.0,
+      "current": 4552,
+      "previous": 4149,
+      "wow_change": 403,
+      "wow_pct": 9.71,
+      "data_status": "real",
+      "source": "上海航运交易所 SCFI 6月5日报告"
+    },
+    "usec_40ft": {
+      "name": "美东 (基本港)",
+      "name_en": "US East Coast (Base Ports)",
+      "route_code": "USEC",
+      "unit": "USD/FEU",
+      "weight_pct": 7.5,
+      "current": 5741,
+      "previous": 5333,
+      "wow_change": 408,
+      "wow_pct": 7.65,
+      "data_status": "real",
+      "source": "上海航运交易所 SCFI 6月5日报告"
+    },
+    "persian_gulf_20ft": {
+      "name": "波斯湾 (迪拜)",
+      "name_en": "Persian Gulf (Dubai)",
+      "route_code": "MEG",
+      "unit": "USD/TEU",
+      "weight_pct": 7.5,
+      "current": 4615,
+      "previous": 4462,
+      "wow_change": 153,
+      "wow_pct": 3.43,
+      "data_status": "real",
+      "source": "上海航运交易所 SCFI 6月5日报告"
+    },
+    "south_america_santos_20ft": {
+      "name": "南美 (桑托斯)",
+      "name_en": "South America (Santos)",
+      "route_code": "SAM-SAN",
+      "unit": "USD/TEU",
+      "weight_pct": 5.0,
+      "current": 3481,
+      "previous": 3400,
+      "wow_change": 81,
+      "wow_pct": 2.38,
+      "data_status": "estimated",
+      "source": "基于SCFI权重推算 · 雪球片段参考"
+    },
+    "south_america_santos_40ft": {
+      "name": "南美 40ft (桑托斯)",
+      "name_en": "South America 40ft (Santos)",
+      "route_code": "SAM-SAN40",
+      "unit": "USD/FEU",
+      "weight_pct": 0.0,
+      "current": 6961,
+      "previous": 6800,
+      "wow_change": 161,
+      "wow_pct": 2.37,
+      "data_status": "estimated",
+      "source": "雪球片段数据确认 · 基于SCFI权重推算"
+    },
+    "central_sa_manzanillo_20ft": {
+      "name": "中南美西 (曼萨尼约)",
+      "name_en": "Central/South America West Coast (Manzanillo)",
+      "route_code": "SAM-MAN",
+      "unit": "USD/TEU",
+      "weight_pct": 0.0,
+      "current": 2850,
+      "previous": 2730,
+      "wow_change": 120,
+      "wow_pct": 4.40,
+      "data_status": "estimated",
+      "source": "基于相关航线市场行情推算 · 南美西航线新增"
+    },
+    "central_sa_manzanillo_40ft": {
+      "name": "中南美西 40ft (曼萨尼约)",
+      "name_en": "Central/South America West Coast 40ft (Manzanillo)",
+      "route_code": "SAM-MAN40",
+      "unit": "USD/FEU",
+      "weight_pct": 0.0,
+      "current": 5700,
+      "previous": 5460,
+      "wow_change": 240,
+      "wow_pct": 4.40,
+      "data_status": "estimated",
+      "source": "基于相关航线市场行情推算 · 南美西航线新增"
+    },
+    "west_africa_lagos_20ft": {
+      "name": "西非 (拉各斯)",
+      "name_en": "West Africa (Lagos)",
+      "route_code": "WAF-LOS",
+      "unit": "USD/TEU",
+      "weight_pct": 2.5,
+      "current": 3200,
+      "previous": 3050,
+      "wow_change": 150,
+      "wow_pct": 4.92,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及西非航线市场行情推算 · 非洲航线新增"
+    },
+    "south_africa_durban_20ft": {
+      "name": "南非 (德班)",
+      "name_en": "South Africa (Durban)",
+      "route_code": "SAF-DUR",
+      "unit": "USD/TEU",
+      "weight_pct": 2.5,
+      "current": 2480,
+      "previous": 2350,
+      "wow_change": 130,
+      "wow_pct": 5.53,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及南非航线市场行情推算 · 非洲航线新增"
+    },
+    "east_africa_mombasa_20ft": {
+      "name": "东非 (蒙巴萨)",
+      "name_en": "East Africa (Mombasa)",
+      "route_code": "EAF-MBA",
+      "unit": "USD/TEU",
+      "weight_pct": 0.0,
+      "current": 2150,
+      "previous": 2080,
+      "wow_change": 70,
+      "wow_pct": 3.37,
+      "data_status": "estimated",
+      "source": "基于东非航线市场行情推算 · 非洲航线新增"
+    },
+    "australia_20ft": {
+      "name": "澳新 (墨尔本)",
+      "name_en": "Australia/NZ (Melbourne)",
+      "route_code": "AUS-MEL",
+      "unit": "USD/TEU",
+      "weight_pct": 5.0,
+      "current": 1250,
+      "previous": 1220,
+      "wow_change": 30,
+      "wow_pct": 2.46,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及附加费信息推算"
+    },
+    "se_asia_20ft": {
+      "name": "东南亚 (新加坡)",
+      "name_en": "Southeast Asia (Singapore)",
+      "route_code": "SEA-SIN",
+      "unit": "USD/TEU",
+      "weight_pct": 7.5,
+      "current": 680,
+      "previous": 650,
+      "wow_change": 30,
+      "wow_pct": 4.62,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及东南亚航线市场行情推算"
+    },
+    "japan_west_20ft": {
+      "name": "日本关西 (基本港)",
+      "name_en": "West Japan (Base Ports)",
+      "route_code": "JPW",
+      "unit": "USD/TEU",
+      "weight_pct": 5.0,
+      "current": 320,
+      "previous": 315,
+      "wow_change": 5,
+      "wow_pct": 1.59,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及日本航线市场行情推算"
+    },
+    "japan_east_20ft": {
+      "name": "日本关东 (基本港)",
+      "name_en": "East Japan (Base Ports)",
+      "route_code": "JPE",
+      "unit": "USD/TEU",
+      "weight_pct": 5.0,
+      "current": 335,
+      "previous": 330,
+      "wow_change": 5,
+      "wow_pct": 1.52,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及日本航线市场行情推算"
+    },
+    "korea_20ft": {
+      "name": "韩国 (釜山)",
+      "name_en": "Korea (Pusan)",
+      "route_code": "KOR-PUS",
+      "unit": "USD/TEU",
+      "weight_pct": 2.5,
+      "current": 210,
+      "previous": 205,
+      "wow_change": 5,
+      "wow_pct": 2.44,
+      "data_status": "estimated",
+      "source": "基于SCFI权重及韩国航线市场行情推算"
+    }
+  },
+  "drewry_wci": {
+    "composite": {
+      "current": 3433,
+      "previous": 2791,
+      "wow_pct": 23.0,
+      "unit": "USD/FEU",
+      "report_date": "2026-06-04",
+      "source": "Drewry World Container Index"
+    },
+    "routes": {
+      "shanghai_los_angeles": {
+        "name": "上海→洛杉矶",
+        "current": 4565,
+        "previous": 3485,
+        "wow_pct": 31.0,
+        "unit": "USD/FEU"
+      },
+      "shanghai_new_york": {
+        "name": "上海→纽约",
+        "current": 5505,
+        "previous": 4588,
+        "wow_pct": 20.0,
+        "unit": "USD/FEU"
+      },
+      "shanghai_rotterdam": {
+        "name": "上海→鹿特丹",
+        "current": 3579,
+        "previous": 2863,
+        "wow_pct": 25.0,
+        "unit": "USD/FEU"
+      },
+      "shanghai_genoa": {
+        "name": "上海→热那亚",
+        "current": 5089,
+        "previous": 4241,
+        "wow_pct": 20.0,
+        "unit": "USD/FEU"
+      }
+    }
+  },
+  "bdi": {
+    "current": 2729,
+    "date": "2026-06-11",
+    "change": -42,
+    "change_pct": -1.52,
+    "unit": "index points",
+    "source": "波罗的海交易所 via StockQ.org",
+    "recent_daily": [
+      {"date": "2026-06-11", "value": 2729},
+      {"date": "2026-06-10", "value": 2771},
+      {"date": "2026-06-09", "value": 2818},
+      {"date": "2026-06-08", "value": 2916},
+      {"date": "2026-06-05", "value": 2981},
+      {"date": "2026-06-04", "value": 3037},
+      {"date": "2026-06-03", "value": 3124}
+    ]
+  },
+  "africa_routes_summary": {
+    "description": "非洲航线监控模块 (V1.3 新增)",
+    "routes_included": ["西非拉各斯", "南非德班", "东非蒙巴萨"],
+    "data_note": "SCFI 官方包含这三条非洲航线。当前数值基于市场行情推算，待爬虫脚本接入 MOT 官网后自动更新实际值。",
+    "market_context": "受红海绕航持续影响，非洲航线运价维持高位。西非线受尼日利亚进口需求支撑，南非线受绕航船舶挂靠德班港增多影响运价上行。"
+  },
+  "south_america_west_summary": {
+    "description": "南美西航线监控模块 (V1.3 新增)",
+    "routes_included": ["南美东桑托斯", "中南美西曼萨尼约"],
+    "data_note": "SCFI 官方同时追踪桑托斯(南美东)和曼萨尼约(南美西)两条航线。曼萨尼约线权重为 0%，但其数据仍在官方报告中发布。",
+    "market_context": "南美西航线受秘鲁/智利进口需求稳定增长推动，运价持续走高。墨西哥曼萨尼约港作为中南美西岸枢纽，运价高于南美东。"
+  },
+  "fuel": {
+    "vlsfo_singapore": {
+      "current": 595,
+      "previous": 588,
+      "change": 7,
+      "change_pct": 1.19,
+      "unit": "USD/mt",
+      "date": "2026-06-10",
+      "data_status": "estimated",
+      "source": "Ship & Bunker · 市场参考价"
+    },
+    "vlsfo_rotterdam": {
+      "current": 562,
+      "previous": 555,
+      "change": 7,
+      "change_pct": 1.26,
+      "unit": "USD/mt",
+      "date": "2026-06-10",
+      "data_status": "estimated",
+      "source": "Ship & Bunker · 市场参考价"
+    }
+  }
+}
