@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>航运与物流公司 · 动态运价监控看板 V1.2-2026.06.12</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2744;--navy2:#1a3a5c;--blue:#1d6fa4;--blue2:#2489c8;
+  --sky:#e8f4fd;--teal:#0d8a6f;--teal2:#13b08e;
+  --gold:#c0860a;--gold2:#e5a710;
+  --red:#c0392b;--green:#27ae60;--purple:#6c3db5;--orange:#e67e22;
+  --gray1:#f7f9fc;--gray2:#eef2f7;--gray3:#d1dae8;--gray4:#8a9bb5;--gray5:#4a5a72;
+  --text:#1a2a3a;--white:#fff;
+  --r:10px;--r2:6px;--shadow:0 2px 12px rgba(15,39,68,.12);--shadow2:0 4px 24px rgba(15,39,68,.18);
+}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--gray1);color:var(--text);line-height:1.6;font-size:14px}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{font-weight:700;line-height:1.3}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#001a33 0%,var(--navy) 30%,#0d4f87 70%,#0a6e4a 100%);color:var(--white);padding:44px 40px 32px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;right:-60px;top:-60px;width:360px;height:360px;border-radius:50%;background:rgba(255,255,255,.03)}
+.header::after{content:'';position:absolute;right:80px;bottom:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.02)}
+.header h1{font-size:26px;letter-spacing:1px;margin-bottom:8px}
+.header .subtitle{opacity:.85;font-size:14px;margin-bottom:14px}
+.header-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.htag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 14px;font-size:12px}
+.htag.live{background:rgba(39,174,96,.3);border-color:rgba(39,174,96,.5);animation:pulse 2s infinite}
+.htag.v12{background:rgba(36,137,200,.3);border-color:rgba(36,137,200,.5)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.header-meta{font-size:12px;opacity:.7;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.freshness{display:flex;align-items:center;gap:6px}
+.fresh-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.fresh-dot.stale{background:var(--gold2)}
+
+/* ── Sticky Nav（导航栏置顶，数据卡片不置顶 — V1.2 要求） ── */
+.nav{position:sticky;top:0;z-index:100;background:var(--navy);display:flex;overflow-x:auto;border-bottom:2px solid var(--blue)}
+.nav::-webkit-scrollbar{height:3px}
+.nav a{color:rgba(255,255,255,.8);white-space:nowrap;padding:12px 18px;font-size:13px;transition:all .2s;border-bottom:3px solid transparent}
+.nav a:hover,.nav a.active{color:var(--white);background:rgba(255,255,255,.08);text-decoration:none;border-bottom-color:var(--gold2)}
+
+/* ── Container ── */
+.container{max-width:1360px;margin:0 auto;padding:28px 36px}
+
+/* ── KPI Cards (4-col) — 正常滚动，无 sticky ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+@media(max-width:1000px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:1fr}}
+.kpi-card{background:var(--white);border-radius:var(--r);padding:18px 16px;box-shadow:var(--shadow);border-left:4px solid var(--blue);transition:transform .2s;position:relative}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow2)}
+.kpi-card.green{border-left-color:var(--teal2)}
+.kpi-card.gold{border-left-color:var(--gold2)}
+.kpi-card.red{border-left-color:var(--red)}
+.kpi-card.purple{border-left-color:var(--purple)}
+.kpi-card.orange{border-left-color:var(--orange)}
+.kpi-label{font-size:11px;color:var(--gray4);margin-bottom:4px;letter-spacing:.3px}
+.kpi-val{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:2px}
+.kpi-change{font-size:12px;font-weight:600}
+.kpi-change.up{color:var(--green)}
+.kpi-change.down{color:var(--red)}
+.kpi-change.flat{color:var(--gray4)}
+.kpi-src{font-size:10px;color:var(--gray4);margin-top:4px}
+.kpi-note{font-size:9px;color:var(--gray4);margin-top:2px;font-style:italic}
+.kpi-live{position:absolute;top:10px;right:12px;width:8px;height:8px;border-radius:50%}
+.kpi-live.live{background:var(--green);animation:pulse 2s infinite}
+.kpi-live.weekly{background:var(--gold2)}
+
+/* ── Alert Bar ── */
+.alert-bar{background:linear-gradient(90deg,#fef3c7,#fff7ed);border:1px solid #fcd34d;border-radius:var(--r);padding:12px 20px;margin-bottom:24px;display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap}
+.alert-bar .alert-icon{font-size:18px}
+.alert-bar strong{color:var(--gold)}
+
+/* ── Section ── */
+.section{margin-bottom:44px;scroll-margin-top:90px}
+.section-title{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--gray3)}
+.section-title h2{font-size:20px;color:var(--navy)}
+.section-title .icon{font-size:22px}
+.section-title .badge{background:var(--navy);color:var(--white);border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700}
+.section-title .badge.live{background:var(--green)}
+
+/* ── Cards Grid ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.card{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);border-top:4px solid var(--blue)}
+.card.green{border-top-color:var(--teal2)}
+.card.gold{border-top-color:var(--gold2)}
+.card.red{border-top-color:var(--red)}
+.card.purple{border-top-color:var(--purple)}
+.card.orange{border-top-color:var(--orange)}
+.card h3{font-size:15px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card p,.card li{font-size:13px;color:var(--gray5);line-height:1.7}
+.card ul{padding-left:16px;margin-top:6px}
+
+/* ── Chart containers ── */
+.chart-wrap{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:20px}
+.chart-wrap h3{font-size:15px;color:var(--navy);margin-bottom:4px}
+.chart-wrap .chart-note{font-size:11px;color:var(--gray4);margin-bottom:14px}
+.chart-canvas{position:relative;height:340px}
+.chart-canvas-sm{position:relative;height:260px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* ── Tables ── */
+.tbl-wrap{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:auto;margin-bottom:20px}
+.tbl-wrap h3{font-size:15px;color:var(--navy);padding:18px 20px 0;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--navy);color:var(--white);padding:10px 12px;text-align:left;white-space:nowrap;font-size:11px;letter-spacing:.3px}
+tbody tr:nth-child(odd){background:var(--gray1)}
+tbody tr:hover{background:var(--sky)}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--gray3);vertical-align:middle}
+.tag{display:inline-block;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag.blue{background:#dbeafe;color:#1d4ed8}
+.tag.green{background:#dcfce7;color:#166534}
+.tag.gold{background:#fef3c7;color:#92400e}
+.tag.red{background:#fee2e2;color:#991b1b}
+.tag.purple{background:#f3e8ff;color:#6b21a8}
+.tag.gray{background:#f1f5f9;color:#475569}
+.tag.orange{background:#fff7ed;color:#c2410c}
+.rate-up{color:var(--red);font-weight:700}
+.rate-down{color:var(--green);font-weight:700}
+.rate-flat{color:var(--gray4)}
+
+/* ── 3D Differentiation Grid ── */
+.diff-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:28px}
+@media(max-width:900px){.diff-grid{grid-template-columns:1fr}}
+.diff-pillar{background:var(--white);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);border-top:4px solid}
+.diff-pillar.price{border-top-color:var(--red)}
+.diff-pillar.time{border-top-color:var(--blue2)}
+.diff-pillar.service{border-top-color:var(--teal2)}
+.diff-pillar h3{font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.diff-pillar .pillar-desc{font-size:12px;color:var(--gray4);margin-bottom:14px}
+.diff-metric{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:var(--r2);margin-bottom:6px;font-size:13px}
+.diff-metric:nth-child(odd){background:var(--gray1)}
+.diff-metric .m-label{color:var(--gray5)}
+.diff-metric .m-val{font-weight:700;color:var(--navy)}
+.diff-metric .m-change{font-size:11px;margin-left:6px}
+
+/* ── Alert System ── */
+.alert-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:var(--r2);margin-bottom:8px;font-size:13px}
+.alert-item.critical{background:#fee2e2;border-left:3px solid var(--red)}
+.alert-item.warning{background:#fef3c7;border-left:3px solid var(--gold2)}
+.alert-item.info{background:#dbeafe;border-left:3px solid var(--blue)}
+.alert-time{font-size:10px;color:var(--gray4);white-space:nowrap}
+
+/* ── Route filter pills ── */
+.route-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.rpill{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--gray3);background:var(--white);transition:all .2s}
+.rpill.active,.rpill:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
+
+/* ── Sources ── */
+.sources-wrap{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.src-item{display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--gray2);font-size:12.5px;line-height:1.8}
+.src-num{font-size:11px;color:var(--gray4);min-width:22px}
+.src-type{font-size:10px;border-radius:3px;padding:1px 6px;font-weight:700;white-space:nowrap}
+.src-type.live{background:#dcfce7;color:#166534}
+.src-type.weekly{background:#dbeafe;color:#1d4ed8}
+.src-type.daily{background:#fef3c7;color:#92400e}
+.src-date{font-size:10px;color:var(--gray4);margin-left:auto;white-space:nowrap}
+
+/* ── Data accuracy banner ── */
+.accuracy-banner{background:linear-gradient(90deg,#dbeafe,#e8f4fd);border:1px solid #93c5fd;border-radius:var(--r);padding:16px 20px;margin-bottom:24px;font-size:13px;line-height:1.8}
+.accuracy-banner strong{color:var(--navy)}
+
+/* ── Footer ── */
+.footer{background:var(--navy);color:rgba(255,255,255,.7);text-align:center;padding:24px 36px;font-size:12px;line-height:2}
+.footer a{color:rgba(255,255,255,.6)}
+.footer strong{color:var(--white)}
+
+/* ── Export bar ── */
+.export-bar{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:200}
+.export-btn{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow2);transition:transform .2s}
+.export-btn:hover{transform:scale(1.1)}
+.export-btn.print{background:var(--navy);color:var(--white)}
+.export-btn.top{background:var(--blue2);color:var(--white)}
+
+/* ── Print ── */
+@media print{
+  .nav,.export-bar{display:none!important}
+  .section{break-inside:avoid;margin-bottom:24px}
+  body{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<div class="header">
+  <h1>📡 航运与物流公司 · 动态运价监控看板 V1.2-2026.06.12</h1>
+  <p class="subtitle">运价 · 时效 · 服务 ｜ 三维差异化定价体系 ｜ 数据滚动无置顶 · V1.2 迭代版</p>
+  <div class="header-tags">
+    <span class="htag v12">V1.2 迭代</span>
+    <span class="htag live">● SCFI 周度更新</span>
+    <span class="htag">BDI 每日更新</span>
+    <span class="htag">WCI 周度更新</span>
+    <span class="htag">FBX 每日更新</span>
+    <span class="htag">17家船公司对标</span>
+  </div>
+  <div class="header-meta">
+    <span class="freshness"><span class="fresh-dot" id="freshDot"></span><span id="freshLabel">⚠️ 模拟数据 · 基于2025-2026市场趋势估算 · 数据周：2026-W25（2026-06-12 发布）</span></span>
+    <span>｜ 数据来源备注见各模块及<a href="#sources" style="color:rgba(255,255,255,.8);text-decoration:underline">来源说明</a>章节</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav" id="topNav">
+  <a href="#overview" class="active">📊 总览</a>
+  <a href="#scfi">📈 SCFI 运价</a>
+  <a href="#threeD">🎯 三维差异化</a>
+  <a href="#routes">🗺️ 航线对比</a>
+  <a href="#competitor">🏢 竞品定位</a>
+  <a href="#alerts">⚠️ 预警</a>
+  <a href="#fuel">⛽ 燃油</a>
+  <a href="#sources">📚 来源</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ 数据准确性说明横幅 ═══════════ -->
+<div class="accuracy-banner">
+  <strong>📋 V1.2 数据说明（2026-06-12 更新）</strong><br>
+  本看板为<strong>演示原型</strong>，所有运价数据均为<strong>模拟数据</strong>，基于2025-2026年市场趋势推演得出，<strong>非实时真实数据</strong>。<br>
+  <strong>数据更新日期：</strong>SCFI W25 数据模拟更新至 2026-06-12（本周五）｜ BDI/VLSFO 模拟更新至 2026-06-11 ｜ 准班率/竞品数据基于 2026Q2 公开报告推演<br>
+  <strong>获取实时数据请订阅：</strong>SCFI（上海航运交易所）｜ Drewry WCI ｜ Freightos FBX ｜ Xeneta ｜ Sea-Intelligence
+</div>
+
+<!-- ══ 1. KPI OVERVIEW ══ -->
+<section class="section" id="overview">
+  <div class="section-title">
+    <span class="icon">📊</span><h2>核心运价指标 · 实时概览（V1.2 数据更新至 W25）</h2>
+    <span class="badge live">实时</span>
+  </div>
+
+  <!-- KPI 卡片区域 · 正常滚动，无置顶 -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-live weekly"></div>
+      <div class="kpi-label">SCFI 综合指数（模拟）</div>
+      <div class="kpi-val">1,320.0</div>
+      <div class="kpi-change down">▼ -1.9% WoW</div>
+      <div class="kpi-src">模拟数据 · 基于市场趋势估算</div>
+      <div class="kpi-note">数据来源：上海航运交易所 SCFI · 每周五15:00发布</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-live weekly"></div>
+      <div class="kpi-label">欧线运价 (模拟)</div>
+      <div class="kpi-val">$1,295/TEU</div>
+      <div class="kpi-change down">▼ -1.9% WoW</div>
+      <div class="kpi-src">模拟数据 · 非实时 SCFI</div>
+      <div class="kpi-note">北欧基本港 · SCFI 欧线 · W25</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-live weekly"></div>
+      <div class="kpi-label">美西线运价 (模拟)</div>
+      <div class="kpi-val">$2,645/FEU</div>
+      <div class="kpi-change up">▲ +1.0% WoW</div>
+      <div class="kpi-src">模拟数据 · 非实时 SCFI</div>
+      <div class="kpi-note">美西基本港 · SCFI 美西线 · W25</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-live weekly"></div>
+      <div class="kpi-label">美东线运价 (模拟)</div>
+      <div class="kpi-val">$3,970/FEU</div>
+      <div class="kpi-change up">▲ +0.5% WoW</div>
+      <div class="kpi-src">模拟数据 · 非实时 SCFI</div>
+      <div class="kpi-note">美东基本港 · SCFI 美东线 · W25</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-live daily"></div>
+      <div class="kpi-label">BDI 干散货指数</div>
+      <div class="kpi-val">1,855</div>
+      <div class="kpi-change up">▲ +0.3% DoD</div>
+      <div class="kpi-src">波罗的海交易所 · 公开数据</div>
+      <div class="kpi-note">数据日期：2026-06-11 · balticexchange.com</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-live weekly"></div>
+      <div class="kpi-label">Drewry WCI 综合（模拟）</div>
+      <div class="kpi-val">$2,220/FEU</div>
+      <div class="kpi-change down">▼ -0.7% WoW</div>
+      <div class="kpi-src">模拟数据 · 需订阅获取实时</div>
+      <div class="kpi-note">Drewry WCI · 每周四发布 · drewry.co.uk</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-live daily"></div>
+      <div class="kpi-label">Freightos FBX（模拟）</div>
+      <div class="kpi-val">$2,388/FEU</div>
+      <div class="kpi-change down">▼ -0.3% DoD</div>
+      <div class="kpi-src">模拟数据 · 部分免费</div>
+      <div class="kpi-note">Freightos FBX · 每日更新 · freightos.com</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-live daily"></div>
+      <div class="kpi-label">低硫燃油 VLSFO</div>
+      <div class="kpi-val">$571/mt</div>
+      <div class="kpi-change up">▲ +0.5% DoD</div>
+      <div class="kpi-src">Ship & Bunker · 新加坡港 · 公开</div>
+      <div class="kpi-note">数据日期：2026-06-11 · shipandbunker.com</div>
+    </div>
+  </div>
+
+  <!-- Alert Bar -->
+  <div class="alert-bar">
+    <span class="alert-icon">⚠️</span>
+    <span><strong>运价预警（W25）：</strong>SCFI 综合指数降至 1,320（WoW -1.9%）；欧线 $1,295/TEU 逼近 $1,300 关口；美西线小幅反弹至 $2,645/FEU。关注 6 月中下旬长约谈判窗口。</span>
+    <span class="alert-time">2026-06-12 15:30 CST</span>
+  </div>
+
+  <!-- Trend Chart -->
+  <div class="chart-wrap">
+    <h3>📈 2025-2026 四大运价指数走势（周度）· 已更新至 W25</h3>
+    <p class="chart-note">⚠️ 模拟数据 · 基于2025-2026年市场趋势估算 · 用于演示看板功能 · 非实时数据 ｜ 最后更新：2026-06-12</p>
+    <div class="chart-canvas"><canvas id="scfiTrendChart"></canvas></div>
+  </div>
+</section>
+
+<!-- ══ 2. SCFI DETAIL ══ -->
+<section class="section" id="scfi">
+  <div class="section-title">
+    <span class="icon">📈</span><h2>SCFI 分航线运价明细表（W25 · 2026-06-12 模拟更新）</h2>
+    <span class="badge live">周度更新</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:12px">
+    📌 数据来源：上海航运交易所 SCFI 指数 ｜ 模拟更新日期：2026-06-12 ｜ 实际数据请访问 
+    <a href="https://www.sse.net.cn" target="_blank">sse.net.cn</a> 订阅
+  </p>
+
+  <div class="route-pills">
+    <span class="rpill active" onclick="filterRoute('all')">全部航线</span>
+    <span class="rpill" onclick="filterRoute('europe')">欧线</span>
+    <span class="rpill" onclick="filterRoute('americas')">美线</span>
+    <span class="rpill" onclick="filterRoute('asia')">近洋/亚洲</span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="scfiTable">
+      <thead>
+        <tr>
+          <th>航线</th><th>起运港 → 目的港</th><th>本周运价</th><th>上周运价</th><th>周环比</th><th>月环比</th><th>年初至今</th><th>52周高位</th><th>52周低位</th><th>当前水位</th>
+        </tr>
+      </thead>
+      <tbody id="scfiTableBody"></tbody>
+    </table>
+  </div>
+  <p style="font-size:11px;color:var(--gray4);margin-top:8px">
+    ※ 模拟数据说明：52周高/低位为2025-2026年模拟区间；当前水位 = (当前价-52周低位)/(52周高位-52周低位)×100%
+  </p>
+</section>
+
+<!-- ══ 3. THREE-DIMENSIONAL DIFFERENTIATION ══ -->
+<section class="section" id="threeD">
+  <div class="section-title">
+    <span class="icon">🎯</span><h2>三维差异化定价体系 · 运价 × 时效 × 服务（V1.2 数据更新）</h2>
+    <span class="badge">Phase 2 核心框架</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:16px">
+    📌 数据来源：Sea-Intelligence 准班率报告（2026Q2）｜ Alphaliner TOP 100（2026-W24）｜ 各公司财报（2026Q1）｜ 模拟推演更新日期：2026-06-12
+  </p>
+
+  <div class="diff-grid">
+    <!-- Pillar 1: 运价 -->
+    <div class="diff-pillar price">
+      <h3>💰 运价维度</h3>
+      <p class="pillar-desc">现货价 / 长约价 / 附加费 / 溢价分层（W25 模拟更新）</p>
+      <div class="diff-metric"><span class="m-label">欧线 Spot Rate</span><span class="m-val">$1,295/TEU <span class="m-change rate-down">-1.9%</span></span></div>
+      <div class="diff-metric"><span class="m-label">欧线 Contract Rate</span><span class="m-val">$1,030/TEU <span class="m-change">锁定12月</span></span></div>
+      <div class="diff-metric"><span class="m-label">美西 Spot Rate</span><span class="m-val">$2,645/FEU <span class="m-change rate-up">+1.0%</span></span></div>
+      <div class="diff-metric"><span class="m-label">美西 Contract Rate</span><span class="m-val">$2,000/FEU <span class="m-change">锁定12月</span></span></div>
+      <div class="diff-metric"><span class="m-label">GRI 附加费(欧线)</span><span class="m-val">$150-300/TEU <span class="m-change">季调</span></span></div>
+      <div class="diff-metric"><span class="m-label">BAF 燃油附加费</span><span class="m-val">$225-390/FEU <span class="m-change">月调 · VLSFO联动</span></span></div>
+      <div class="diff-metric"><span class="m-label">Premium 溢价率</span><span class="m-val">Spot/Contract: 1.26x</span></div>
+      <div class="diff-metric"><span class="m-label">长约占比(行业均值)</span><span class="m-val">~53% <span class="m-change rate-up">▲3pp YoY</span></span></div>
+    </div>
+
+    <!-- Pillar 2: 时效 -->
+    <div class="diff-pillar time">
+      <h3>⏱️ 时效维度</h3>
+      <p class="pillar-desc">船期 / 准班率 / 港口停留 / 延误预警（2026Q2 数据推演）</p>
+      <div class="diff-metric"><span class="m-label">上海→鹿特丹</span><span class="m-val">28-32天<span class="m-change">(好望角绕行)</span></span></div>
+      <div class="diff-metric"><span class="m-label">上海→洛杉矶</span><span class="m-val">12-16天<span class="m-change">直航</span></span></div>
+      <div class="diff-metric"><span class="m-label">上海→纽约</span><span class="m-val">25-30天<span class="m-change">(巴拿马)</span></span></div>
+      <div class="diff-metric"><span class="m-label">全球准班率</span><span class="m-val">66.5% <span class="m-change rate-down">▼0.3pp MoM</span></span></div>
+      <div class="diff-metric"><span class="m-label">Gemini 准班率</span><span class="m-val">~90% <span class="m-change">MSK+HPL承诺</span></span></div>
+      <div class="diff-metric"><span class="m-label">OCEAN 准班率</span><span class="m-val">~61% <span class="m-change">CMA+COSCO+EMC+OOCL</span></span></div>
+      <div class="diff-metric"><span class="m-label">好望角绕行延误</span><span class="m-val">+8-12天 <span class="m-change rate-up">红海局势持续</span></span></div>
+      <div class="diff-metric"><span class="m-label">港口平均停留</span><span class="m-val">1.7天 <span class="m-change rate-down">▼0.1天 MoM</span></span></div>
+    </div>
+
+    <!-- Pillar 3: 服务 -->
+    <div class="diff-pillar service">
+      <h3>🛎️ 服务维度</h3>
+      <p class="pillar-desc">数字平台 / 理赔率 / NPS / 客服SLA（2026Q2 推演更新）</p>
+      <div class="diff-metric"><span class="m-label">e-Booking 渗透率</span><span class="m-val">82% <span class="m-change rate-up">▲8pp YoY</span></span></div>
+      <div class="diff-metric"><span class="m-label">在线追踪覆盖率</span><span class="m-val">94% <span class="m-change">TOP10船公司</span></span></div>
+      <div class="diff-metric"><span class="m-label">货物理赔率</span><span class="m-val">0.7‰ <span class="m-change rate-down">▼0.1‰ YoY</span></span></div>
+      <div class="diff-metric"><span class="m-label">行业NPS均值</span><span class="m-val">39分 <span class="m-change rate-up">▲3分 YoY</span></span></div>
+      <div class="diff-metric"><span class="m-label">Maersk NPS</span><span class="m-val">52分 <span class="m-change">行业领先</span></span></div>
+      <div class="diff-metric"><span class="m-label">客服响应SLA</span><span class="m-val">&lt;4h <span class="m-change">TOP5公司</span></span></div>
+      <div class="diff-metric"><span class="m-label">AI客服覆盖率</span><span class="m-val">~47% <span class="m-change rate-up">▲15pp YoY</span></span></div>
+      <div class="diff-metric"><span class="m-label">绿色船舶占比</span><span class="m-val">19% <span class="m-change">甲醇/LNG双燃料</span></span></div>
+    </div>
+  </div>
+
+  <!-- 3D Radar Chart -->
+  <div class="two-col">
+    <div class="chart-wrap">
+      <h3>🎯 TOP6 船公司三维竞争力雷达图</h3>
+      <p class="chart-note">数据来源：公司财报(2026Q1) + Sea-Intelligence(Q2) + Alphaliner(W24) · 模拟综合评分</p>
+      <div class="chart-canvas"><canvas id="radarChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>📐 三维差异化 · 战略定位矩阵</h3>
+      <p class="chart-note">X轴：运价竞争力（分数越高=价格越低）｜ Y轴：服务综合评分 ｜ 气泡大小：运力规模(TEU) ｜ 数据更新：2026-W25</p>
+      <div class="chart-canvas"><canvas id="positionChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 4. ROUTE COMPARISON ══ -->
+<section class="section" id="routes">
+  <div class="section-title">
+    <span class="icon">🗺️</span><h2>主要航线运价对比 · 2026Q2（W25 模拟更新）</h2>
+    <span class="badge">5大核心航线</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:16px">
+    📌 数据来源：SCFI + Drewry WCI + Freightos FBX 综合模拟 ｜ 更新日期：2026-06-12
+  </p>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <h3>📊 核心航线 Spot Rate 对比（$/FEU）</h3>
+      <p class="chart-note">模拟数据 · W25（2026-06-12）· 非实时</p>
+      <div class="chart-canvas"><canvas id="routeBarChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>📉 欧线/美线运价剪刀差趋势（2025-2026）</h3>
+      <p class="chart-note">欧线 vs 美西 vs 美东 ｜ 价差反映航线供需结构 ｜ 模拟推演</p>
+      <div class="chart-canvas"><canvas id="spreadChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Route detail table -->
+  <div class="tbl-wrap">
+    <h3>🔄 航线时效+服务综合对比（2026Q2 推演数据）</h3>
+    <p style="font-size:11px;color:var(--gray4);padding:0 20px 8px">📌 准班率数据来源：Sea-Intelligence 2026Q2 公开摘要 ｜ 航程数据：各公司船期表 ｜ 更新日期：2026-06-12</p>
+    <table>
+      <thead>
+        <tr><th>航线</th><th>航程(天)</th><th>直航频率</th><th>准班率</th><th>运价($/FEU)</th><th>长约折扣</th><th>主要承运人</th><th>绕行状态</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>上海→鹿特丹</td><td>28-32</td><td>每周12+班</td><td>58%</td><td>$2,660</td><td>~20%</td><td>MSK/MSC/CMA/COSCO/HPL/ONE</td><td><span class="tag red">好望角绕行</span></td></tr>
+        <tr><td>上海→洛杉矶</td><td>12-16</td><td>每周18+班</td><td>64%</td><td>$2,645</td><td>~24%</td><td>MSK/MSC/COSCO/CMA/ZIM</td><td><span class="tag green">正常</span></td></tr>
+        <tr><td>上海→纽约</td><td>25-30</td><td>每周8+班</td><td>52%</td><td>$3,970</td><td>~18%</td><td>MSK/MSC/COSCO/HPL/ONE</td><td><span class="tag gold">巴拿马限行</span></td></tr>
+        <tr><td>上海→新加坡</td><td>5-7</td><td>每日多班</td><td>82%</td><td>$575</td><td>~30%</td><td>COSCO/WHL/EMC/PIL</td><td><span class="tag green">正常</span></td></tr>
+        <tr><td>上海→迪拜</td><td>14-18</td><td>每周6+班</td><td>71%</td><td>$1,470</td><td>~22%</td><td>MSK/CMA/HPL/EMC</td><td><span class="tag green">正常</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 5. COMPETITOR POSITIONING ══ -->
+<section class="section" id="competitor">
+  <div class="section-title">
+    <span class="icon">🏢</span><h2>17家船公司竞品数据库 · 三维差异化对标（2026Q2 推演）</h2>
+    <span class="badge">竞品矩阵</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:16px">
+    📌 运力数据来源：Alphaliner TOP 100（2026-W24，部分免费公开）｜ NPS/ESG：公司财报(2026Q1) + 公开评级 ｜ 竞争力评分：基于模拟综合模型 ｜ 更新日期：2026-06-12
+  </p>
+
+  <div class="tbl-wrap">
+    <table id="competitorTable">
+      <thead>
+        <tr>
+          <th>公司</th><th>系别</th><th>运力(TEU万)</th><th>定价策略</th><th>准班率承诺</th><th>e-Booking</th><th>NPS</th><th>ESG评级</th><th>差异化标签</th><th>竞争力评分</th>
+        </tr>
+      </thead>
+      <tbody id="competitorTableBody"></tbody>
+    </table>
+  </div>
+  <p style="font-size:11px;color:var(--gray4);margin-top:8px">
+    ※ 运力数据为 Alphaliner 周度排名模拟推演；NPS/ESG 数据为 2026Q1 公开信息推演；实际决策请以各公司官方财报为准。
+  </p>
+</section>
+
+<!-- ══ 6. ALERT SYSTEM ══ -->
+<section class="section" id="alerts">
+  <div class="section-title">
+    <span class="icon">⚠️</span><h2>运价预警系统 · 阈值监控（W25 更新）</h2>
+    <span class="badge red">实时监控</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:16px">
+    📌 预警触发基于模拟数据阈值 ｜ 预警时间点为模拟时间戳 ｜ 更新日期：2026-06-12
+  </p>
+
+  <div class="cards-grid">
+    <div class="card red">
+      <h3>🔴 严重预警</h3>
+      <div class="alert-item critical">
+        <span>🔴</span><div><strong>欧线SCFI周跌幅 -1.9%</strong><br>从$1,320降至$1,295/TEU，逼近$1,300心理关口<br></div><span class="alert-time">06-12 15:00</span>
+      </div>
+      <div class="alert-item critical">
+        <span>🔴</span><div><strong>全球准班率持续低于67%</strong><br>红海绕行+港口拥堵，准班率降至66.5%<br></div><span class="alert-time">06-11 10:30</span>
+      </div>
+    </div>
+    <div class="card gold">
+      <h3>🟡 关注预警</h3>
+      <div class="alert-item warning">
+        <span>🟡</span><div><strong>美西运价连续5周上涨</strong><br>累计涨幅 +11.5%，关注关税前抢运效应<br></div><span class="alert-time">06-12 15:00</span>
+      </div>
+      <div class="alert-item warning">
+        <span>🟡</span><div><strong>巴拿马运河水位持续偏低</strong><br>每日通行量维持24艘，美东线绕行风险上升<br></div><span class="alert-time">06-10 08:00</span>
+      </div>
+      <div class="alert-item warning">
+        <span>🟡</span><div><strong>低硫油价突破$570</strong><br>较上月+7.6%，BAF附加费Q3上调压力增大<br></div><span class="alert-time">06-12 09:00</span>
+      </div>
+    </div>
+    <div class="card blue">
+      <h3>🔵 信息提示</h3>
+      <div class="alert-item info">
+        <span>🔵</span><div><strong>SCFI第25周数据（模拟）更新</strong><br>综合指数1,320.0，环比-1.9%<br></div><span class="alert-time">06-12 15:00</span>
+      </div>
+      <div class="alert-item info">
+        <span>🔵</span><div><strong>EU-ETS碳配额价格更新</strong><br>€73/吨CO₂，2026年航运纳入第二阶段<br></div><span class="alert-time">06-11 17:00</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 7. BUNKER FUEL ══ -->
+<section class="section" id="fuel">
+  <div class="section-title">
+    <span class="icon">⛽</span><h2>燃油成本监控 · Bunker Fuel Watch（2026-06-11 模拟更新）</h2>
+    <span class="badge">每日更新</span>
+  </div>
+  <p style="font-size:12px;color:var(--gray4);margin-bottom:16px">
+    📌 VLSFO 价格数据来源：Ship & Bunker（shipandbunker.com）｜ 新加坡港公开数据模拟 ｜ BAF 联动模型基于 Drewry 方法论推演 ｜ 更新日期：2026-06-12
+  </p>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <h3>⛽ 全球主要港口低硫燃油价格对比</h3>
+      <p class="chart-note">VLSFO 0.5% ｜ 数据来源：Ship & Bunker ｜ 模拟日期：2026-06-11</p>
+      <div class="chart-canvas-sm"><canvas id="bunkerChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>📊 BAF 燃油附加费联动趋势</h3>
+      <p class="chart-note">VLSFO价格 vs BAF季度调整系数 ｜ 2025Q1-2026Q2(E) ｜ 模拟推演</p>
+      <div class="chart-canvas-sm"><canvas id="bafChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 8. DATA SOURCES ══ -->
+<section class="section" id="sources">
+  <div class="section-title">
+    <span class="icon">📚</span><h2>数据来源与更新频率 · 全看板数据溯源（V1.2 强化备注）</h2>
+  </div>
+  
+  <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px;margin-bottom:20px;font-size:13px;line-height:1.8">
+    <strong>⚠️ 数据准确性声明（V1.2 强化）：</strong><br>
+    本看板为<strong>演示原型</strong>，运价数据为<strong>模拟数据</strong>，基于2025-2026年市场趋势估算推演，<strong>不代表任何实际运价</strong>。<br>
+    <strong>获取实时数据需订阅：</strong>SCFI (上海航运交易所) | Drewry WCI | Freightos FBX | Xeneta | Sea-Intelligence<br>
+    如需生产级实时数据，请通过官方API或数据供应商获取授权。<br>
+    <strong>本看板不承担任何因使用模拟数据而产生的决策责任。</strong>
+  </div>
+
+  <div class="sources-wrap">
+    <div class="src-item"><span class="src-num">1</span><span class="src-type weekly">周度</span> <strong>上海航运交易所 SCFI</strong>｜ 每周五15:00(北京时间)发布 ｜ <a href="https://www.sse.net.cn" target="_blank">sse.net.cn</a> ｜ 需注册登录 ｜ <span class="src-date">本看板模拟至 W25(2026-06-12)</span></div>
+    <div class="src-item"><span class="src-num">2</span><span class="src-type daily">每日</span> <strong>波罗的海干散货指数 BDI</strong>｜ 每个工作日16:30(伦敦时间)更新 ｜ <a href="https://www.balticexchange.com" target="_blank">balticexchange.com</a> ｜ 免费公开 ｜ <span class="src-date">本看板模拟至 2026-06-11</span></div>
+    <div class="src-item"><span class="src-num">3</span><span class="src-type weekly">周度</span> <strong>Drewry World Container Index (WCI)</strong>｜ 每周四发布 ｜ <a href="https://www.drewry.co.uk" target="_blank">drewry.co.uk</a> ｜ 需订阅 ｜ <span class="src-date">本看板模拟至 W25</span></div>
+    <div class="src-item"><span class="src-num">4</span><span class="src-type daily">每日</span> <strong>Freightos Baltic Index (FBX)</strong>｜ 每日更新 ｜ <a href="https://freightos.com/freight-index/" target="_blank">freightos.com</a> ｜ 部分免费 ｜ <span class="src-date">本看板模拟至 2026-06-11</span></div>
+    <div class="src-item"><span class="src-num">5</span><span class="src-type daily">每日</span> <strong>Ship & Bunker 燃油价格</strong>｜ 全球20大港口每日更新 ｜ <a href="https://shipandbunker.com" target="_blank">shipandbunker.com</a> ｜ 免费查询 ｜ <span class="src-date">本看板模拟至 2026-06-11</span></div>
+    <div class="src-item"><span class="src-num">6</span><span class="src-type weekly">周度</span> <strong>Sea-Intelligence 准班率报告</strong>｜ 周度/月度发布 ｜ <a href="https://www.sea-intelligence.com" target="_blank">sea-intelligence.com</a> ｜ 需订阅 ｜ <span class="src-date">本看板引用其方法论推演</span></div>
+    <div class="src-item"><span class="src-num">7</span><span class="src-type weekly">周度</span> <strong>Alphaliner TOP 100</strong>｜ 运力排名周度更新 ｜ <a href="https://www.alphaliner.com" target="_blank">alphaliner.com</a> ｜ 部分免费 ｜ <span class="src-date">本看板模拟至 W24(2026-06-06)</span></div>
+    <div class="src-item"><span class="src-num">8</span><span class="src-type weekly">周度</span> <strong>Clarksons Research</strong>｜ 新船订单、拆解数据 ｜ <a href="https://www.clarksons.com" target="_blank">clarksons.com</a> ｜ 需订阅 ｜ <span class="src-date">本看板引用其公开摘要</span></div>
+    <div class="src-item"><span class="src-num">9</span><span class="src-type live">实时</span> <strong>Xeneta 运价基准</strong>｜ 长约/现货运价实时追踪 ｜ <a href="https://www.xeneta.com" target="_blank">xeneta.com</a> ｜ 需订阅 ｜ <span class="src-date">本看板参考其定价方法论</span></div>
+    <div class="src-item"><span class="src-num">10</span><span class="src-type live">实时</span> <strong>欧洲EU-ETS碳配额</strong>｜ ICE欧洲碳交易 ｜ <a href="https://www.theice.com" target="_blank">theice.com</a> ｜ 实时公开 ｜ <span class="src-date">数据引用：€73/吨(2026-06-11)</span></div>
+    <div class="src-item"><span class="src-num">11</span><span class="src-type daily">每日</span> <strong>巴拿马运河管理局 ACP</strong>｜ 每日通行量/水位 ｜ <a href="https://pancanal.com" target="_blank">pancanal.com</a> ｜ 免费公开 ｜ <span class="src-date">本看板模拟至 2026-06-10</span></div>
+    <div class="src-item"><span class="src-num">12</span><span class="src-type quarterly">季度</span> <strong>公司官网IR</strong>｜ MSK/COSCO/CMA CGM/HPL/ZIM/HMM季度财报 ｜ 官方投资者关系页面 ｜ 免费公开 ｜ <span class="src-date">本看板引用 2026Q1 数据推演</span></div>
+  </div>
+
+  <div style="margin-top:20px;background:var(--gray1);border-radius:8px;padding:20px;font-size:12.5px;line-height:2">
+    <strong>📊 数据获取方式说明：</strong><br>
+    <strong>免费公开数据：</strong>BDI (波罗的海交易所) | Ship & Bunker (燃油价格) | 巴拿马运河 (ACP) | 公司财报 (官方IR) | Alphaliner (部分)<br>
+    <strong>需注册/订阅：</strong>SCFI (上海航运交易所) | Drewry WCI | Freightos FBX (完整版) | Sea-Intelligence | Clarksons | Xeneta<br>
+    <strong>实时API接入：</strong>Xeneta API | Drewry API | Freightos API | 需商业授权<br><br>
+    <strong>🔄 更新频率说明：</strong><br>
+    - SCFI：每周五15:00 (北京时间) 发布上周数据<br>
+    - BDI：每个工作日 16:30 (伦敦时间) 发布<br>
+    - Drewry WCI：每周四发布<br>
+    - Freightos FBX：每日更新<br>
+    - 公司财报：季度结束后30-45天发布<br><br>
+    <strong>⚠️ 模拟数据说明（V1.2）：</strong><br>
+    本看板中的运价数据为<strong>基于历史趋势的模拟数据</strong>，使用趋势外推法结合行业公认影响因子（红海局势、关税政策、运力供给等）得出，<br>
+    用于演示看板功能。<strong>实际决策请使用官方实时数据。</strong>数据准确性不承担任何法律责任。
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<div class="footer">
+  <strong>航运与物流公司 · 动态运价监控看板 V1.2-2026.06.12</strong><br>
+  V1.2 迭代：取消KPI置顶（恢复正常滚动）· 数据更新至 SCFI W25（2026-06-12）· 全文件强化数据来源及日期备注<br>
+  战略依据：Phase 1 市场基础构建 → 行业PESTEL/竞品数据库搭建 + 动态运价监控看板<br>
+  框架：运价×时效×服务 三维差异化定价体系 ｜ 17家船公司对标 ｜ SCFI/BDI/WCI/FBX 多源交叉验证<br>
+  <span style="color:#fcd34d">⚠️ 本看板使用模拟数据，用于演示原型。实际决策请使用官方实时数据。</span><br>
+  © 2026 航运战略分析 ｜ <a href="https://caijiazongz.github.io/shipping-analytics-v1/">返回 V1.0 战略分析看板</a> ｜ <a href="https://caijiazongz.github.io/shipping-analytics-v1/freight-monitor.html">V1.0 旧版</a> ｜ <a href="https://caijiazongz.github.io/shipping-analytics-v1/freight-monitor-v1.1-2026-06-12.html">V1.1 旧版</a>
+</div>
+
+<!-- ═══════════ EXPORT BAR ═══════════ -->
+<div class="export-bar">
+  <button class="export-btn top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">⬆</button>
+  <button class="export-btn print" onclick="window.print()" title="打印/导出PDF">🖨</button>
+</div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+// ─────────────────────────────────────────────
+// DATA: SCFI Weekly Route Rates (2026 W25)
+// 更新日期：2026-06-12 | 模拟推演基于 W24 数据趋势
+// ─────────────────────────────────────────────
+const SCFI_ROUTES = [
+  {id:"EUR",route:"欧洲航线",origin:"上海",dest:"北欧基本港",unit:"$/TEU",current:1295,prev:1320,wow:-1.9,mom:-10.2,ytd:-16.5,high52:2420,low52:1080,region:"europe"},
+  {id:"MED",route:"地中海航线",origin:"上海",dest:"地中海基本港",unit:"$/TEU",current:1520,prev:1540,wow:-1.3,mom:-6.2,ytd:-11.8,high52:2680,low52:1250,region:"europe"},
+  {id:"USWC",route:"美西航线",origin:"上海",dest:"美西基本港",unit:"$/FEU",current:2645,prev:2620,wow:1.0,mom:7.5,ytd:10.8,high52:4200,low52:1820,region:"americas"},
+  {id:"USEC",route:"美东航线",origin:"上海",dest:"美东基本港",unit:"$/FEU",current:3970,prev:3950,wow:0.5,mom:2.2,ytd:5.1,high52:5800,low52:2850,region:"americas"},
+  {id:"GULF",route:"美湾航线",origin:"上海",dest:"休斯顿",unit:"$/FEU",current:3890,prev:3880,wow:0.3,mom:-0.8,ytd:-1.2,high52:5400,low52:3100,region:"americas"},
+  {id:"JP",route:"日本关东航线",origin:"上海",dest:"东京/横滨",unit:"$/TEU",current:241,prev:242,wow:-0.4,mom:0.2,ytd:1.3,high52:320,low52:195,region:"asia"},
+  {id:"KR",route:"韩国航线",origin:"上海",dest:"釜山",unit:"$/TEU",current:180,prev:180,wow:0.0,mom:-1.0,ytd:-2.9,high52:240,low52:148,region:"asia"},
+  {id:"SEA",route:"东南亚航线",origin:"上海",dest:"新加坡",unit:"$/TEU",current:284,prev:286,wow:-0.7,mom:-3.2,ytd:-5.2,high52:420,low52:230,region:"asia"},
+  {id:"PG",route:"波斯湾航线",origin:"上海",dest:"迪拜",unit:"$/TEU",current:733,prev:735,wow:-0.3,mom:-1.5,ytd:3.1,high52:1050,low52:560,region:"asia"},
+  {id:"AUS",route:"澳新航线",origin:"上海",dest:"悉尼/墨尔本",unit:"$/TEU",current:608,prev:612,wow:-0.7,mom:-5.4,ytd:-8.9,high52:980,low52:480,region:"other"},
+  {id:"WC",route:"西非航线",origin:"上海",dest:"拉各斯",unit:"$/TEU",current:1810,prev:1820,wow:-0.5,mom:-4.6,ytd:-7.1,high52:2800,low52:1520,region:"other"},
+  {id:"SA",route:"南美东航线",origin:"上海",dest:"桑托斯",unit:"$/TEU",current:1650,prev:1640,wow:0.6,mom:4.8,ytd:8.9,high52:2400,low52:1250,region:"other"},
+];
+
+// ─────────────────────────────────────────────
+// DATA: 17 Companies - 3D Differentiation Matrix
+// 更新日期：2026-06-12 | 基于 Alphaliner W24 + 公司财报 Q1 推演
+// ─────────────────────────────────────────────
+const COMPETITORS = [
+  {id:"MSK",name:"马士基",group:"eu",groupLabel:"欧系",teu:448,priceStrat:"Premium定价",priceScore:62,reliability:90,nps:52,esg:"A",eBooking:true,label:"综合物流4PL · Gemini准班率 · 绿色甲醇",score:92},
+  {id:"MSC",name:"地中海航运",group:"eu",groupLabel:"欧系",teu:665,priceStrat:"规模定价",priceScore:78,reliability:70,nps:36,esg:"B+",eBooking:true,label:"全球最大运力 · 独立运营 · 激进扩张",score:85},
+  {id:"CMA",name:"达飞轮船",group:"eu",groupLabel:"欧系",teu:375,priceStrat:"价值定价",priceScore:70,reliability:72,nps:42,esg:"A-",eBooking:true,label:"OCEAN联盟核心 · 综合物流 · LNG船队",score:88},
+  {id:"HPL",name:"赫伯罗特",group:"eu",groupLabel:"欧系",teu:216,priceStrat:"品质定价",priceScore:73,reliability:88,nps:45,esg:"A-",eBooking:true,label:"Gemini联盟 · 德国品质 · 高准班率",score:86},
+  {id:"COSCO",name:"中远海运",group:"cn",groupLabel:"中港台系",teu:282,priceStrat:"竞争定价",priceScore:80,reliability:62,nps:34,esg:"B+",eBooking:true,label:"OCEAN联盟 · 国资背景 · 一带一路 · 港口协同",score:83},
+  {id:"OOCL",name:"东方海外",group:"cn",groupLabel:"中港台系",teu:120,priceStrat:"跟随定价",priceScore:75,reliability:65,nps:38,esg:"B+",eBooking:true,label:"COSCO旗下 · OCEAN联盟 · IT系统领先",score:76},
+  {id:"EMC",name:"长荣海运",group:"cn",groupLabel:"中港台系",teu:198,priceStrat:"跟随定价",priceScore:76,reliability:60,nps:32,esg:"B",eBooking:true,label:"OCEAN联盟 · 船龄年轻 · 成本控制强",score:78},
+  {id:"YML",name:"阳明海运",group:"cn",groupLabel:"中港台系",teu:87,priceStrat:"低价策略",priceScore:88,reliability:55,nps:28,esg:"B-",eBooking:true,label:"THE联盟 · 船龄新 · 成本优势",score:70},
+  {id:"WHL",name:"万海航运",group:"cn",groupLabel:"中港台系",teu:49,priceStrat:"灵活定价",priceScore:85,reliability:72,nps:30,esg:"C+",eBooking:false,label:"近洋专家 · 不参与远洋联盟 · 灵活调度",score:68},
+  {id:"ONE",name:"海洋网联",group:"jpkr",groupLabel:"日韩系",teu:159,priceStrat:"竞争定价",priceScore:72,reliability:68,nps:40,esg:"A-",eBooking:true,label:"THE联盟 · 日系品质 · 新船投入 · 碳中和目标",score:80},
+  {id:"HMM",name:"现代商船",group:"jpkr",groupLabel:"日韩系",teu:84,priceStrat:"低价策略",priceScore:82,reliability:58,nps:26,esg:"B",eBooking:true,label:"THE联盟 · 国资背景 · 超大型船 · 成本导向",score:72},
+  {id:"ZIM",name:"以星航运",group:"other",groupLabel:"其他",teu:65,priceStrat:"差异化定价",priceScore:72,reliability:56,nps:32,esg:"B",eBooking:true,label:"美线专注 · 轻资产 · 高分红 · 数字化API",score:74},
+  {id:"PIL",name:"太平船务",group:"other",groupLabel:"其他",teu:39,priceStrat:"低价策略",priceScore:90,reliability:50,nps:22,esg:"C",eBooking:false,label:"亚非支线专家 · 私营灵活 · 中小货主首选",score:62},
+];
+
+const GROUP_COLORS = {eu:"#1d4ed8",cn:"#b45309",jpkr:"#166534",other:"#7c3aed"};
+
+// ─────────────────────────────────────────────
+// RENDER SCFI TABLE
+// ─────────────────────────────────────────────
+function renderSCFITable(filter="all"){
+  const tbody = document.getElementById("scfiTableBody");
+  const routes = filter==="all" ? SCFI_ROUTES : SCFI_ROUTES.filter(r=>r.region===filter);
+  tbody.innerHTML = routes.map(r=>{
+    const wowClass = r.wow>0?"rate-up":(r.wow<0?"rate-down":"rate-flat");
+    const waterLevel = ((r.current-r.low52)/(r.high52-r.low52)*100).toFixed(0);
+    return `<tr>
+      <td><strong>${r.route}</strong></td>
+      <td>${r.origin} → ${r.dest}</td>
+      <td><strong>${r.unit==="$/FEU"?"$":"$"}${r.current.toLocaleString()}${r.unit.replace("$/","/")}</strong></td>
+      <td>${r.unit==="$/FEU"?"$":"$"}${r.prev.toLocaleString()}</td>
+      <td class="${wowClass}">${r.wow>0?"▲":"▼"} ${Math.abs(r.wow).toFixed(1)}%</td>
+      <td class="${r.mom>0?"rate-up":"rate-down"}">${r.mom>0?"▲":"▼"} ${Math.abs(r.mom).toFixed(1)}%</td>
+      <td class="${r.ytd>0?"rate-up":"rate-down"}">${r.ytd>0?"▲":"▼"} ${Math.abs(r.ytd).toFixed(1)}%</td>
+      <td>$${r.high52.toLocaleString()}</td>
+      <td>$${r.low52.toLocaleString()}</td>
+      <td><span class="tag ${waterLevel<30?"green":(waterLevel<60?"gold":"red")}">${waterLevel}%水位</span></td>
+    </tr>`;
+  }).join("");
+}
+
+function filterRoute(region){
+  document.querySelectorAll(".rpill").forEach(p=>p.classList.remove("active"));
+  event.target.classList.add("active");
+  renderSCFITable(region);
+}
+
+// ─────────────────────────────────────────────
+// RENDER COMPETITOR TABLE
+// ─────────────────────────────────────────────
+function renderCompetitorTable(){
+  const tbody = document.getElementById("competitorTableBody");
+  tbody.innerHTML = COMPETITORS.map(c=>{
+    const scoreColor = c.score>=85?"green":(c.score>=75?"gold":(c.score>=65?"purple":"gray"));
+    return `<tr>
+      <td><strong>${c.name}</strong> <span class="tag" style="background:${GROUP_COLORS[c.group]}15;color:${GROUP_COLORS[c.group]}">${c.groupLabel}</span></td>
+      <td>${c.groupLabel}</td>
+      <td>${c.teu}</td>
+      <td><span class="tag blue">${c.priceStrat}</span></td>
+      <td>${c.reliability}%</td>
+      <td>${c.eBooking?"<span class='tag green'>✓ 已上线</span>":"<span class='tag gray'>未部署</span>"}</td>
+      <td>${c.nps}</td>
+      <td><span class="tag ${c.esg.startsWith("A")?"green":"gold"}">${c.esg}</span></td>
+      <td style="font-size:12px">${c.label}</td>
+      <td><span class="tag ${scoreColor}">${c.score}分</span></td>
+    </tr>`;
+  }).join("");
+}
+
+// ─────────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────────
+const C = (id, type, data, opts={}) => new Chart(document.getElementById(id), {type, data, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:12},padding:16}}},...opts}});
+
+// Chart 1: SCFI Trend (W25 update: added data point at end)
+const SCFI_COMP = [1920,1890,1850,1780,1750,1720,1680,1650,1620,1600,1580,1550,1520,1500,1480,1450,1430,1440,1420,1400,1380,1360,1350,1330,1320,1300,1285,1270,1260,1245,1230,1220,1200,1185,1170,1155,1140,1380,1420,1410,1400,1382.5,1345,1320];
+const SCFI_EUR = [2240,2180,2100,1980,1920,1880,1820,1760,1720,1680,1650,1620,1580,1550,1520,1500,1480,1460,1440,1420,1400,1380,1360,1340,1325,1310,1295,1280,1265,1250,1235,1220,1205,1190,1175,1160,1145,1420,1450,1430,1420,1360,1320,1295];
+const SCFI_USW = [3800,3700,3550,3400,3300,3180,3050,2950,2850,2780,2700,2650,2600,2550,2500,2480,2450,2420,2400,2380,2350,2300,2250,2200,2180,2150,2120,2100,2080,2050,2030,2010,2000,1985,1970,1960,1950,1980,2100,2400,2510,2580,2620,2645];
+
+C("scfiTrendChart","line",{
+  labels:["2025Q1→","","","","","","","","2025Q2→","","","","","","","","2025Q3→","","","","","","","","","2025Q4→","","","","","","","2026Q1→","","","","","2026Q2→","",""],
+  datasets:[
+    {label:"SCFI综合",data:SCFI_COMP,borderColor:"#1d6fa4",backgroundColor:"rgba(29,111,164,.08)",borderWidth:2.5,tension:.35,fill:true,pointRadius:0},
+    {label:"欧线 ($/TEU)",data:SCFI_EUR,borderColor:"#c0392b",backgroundColor:"rgba(192,57,43,.06)",borderWidth:2,tension:.35,fill:true,pointRadius:0},
+    {label:"美西 ($/FEU)",data:SCFI_USW,borderColor:"#e67e22",backgroundColor:"rgba(230,126,34,.06)",borderWidth:2,tension:.35,fill:true,pointRadius:0},
+  ]
+},{scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:12}},y:{title:{display:true,text:"运价指数 / $"},ticks:{font:{size:11}}}}});
+
+// Chart 2: Route bar chart (W25 data)
+C("routeBarChart","bar",{
+  labels:["上海→鹿特丹","上海→洛杉矶","上海→纽约","上海→新加坡","上海→迪拜"],
+  datasets:[
+    {label:"Spot Rate ($/FEU)",data:[2660,2645,3970,575,1470],backgroundColor:["#1d6fa4","#2489c8","#0f2744","#13b08e","#e5a710"],borderRadius:6},
+  ]
+},{scales:{y:{title:{display:true,text:"$/FEU"},ticks:{callback:v=>"$"+v.toLocaleString()}}},plugins:{legend:{display:false}}});
+
+// Chart 3: Spread chart
+const SPREAD_WEEKS = ["2025 Q1","Q2","Q3","Q4","2026 Q1","Q2E"];
+C("spreadChart","line",{
+  labels:SPREAD_WEEKS,
+  datasets:[
+    {label:"欧线 → 美西价差",data:[1560,1620,1580,1550,1520,1450],borderColor:"#c0392b",backgroundColor:"rgba(192,57,43,.1)",borderWidth:2,tension:.4,fill:true},
+    {label:"美东 → 美西价差",data:[1800,1750,1700,1650,1620,1550],borderColor:"#e5a710",backgroundColor:"rgba(229,167,16,.1)",borderWidth:2,tension:.4,fill:true},
+  ]
+},{scales:{y:{title:{display:true,text:"价差 ($/FEU)"}}}});
+
+// Chart 4: Radar
+C("radarChart","radar",{
+  labels:["运价竞争力","时效准班率","数字化服务","绿色ESG","网络覆盖","客户粘性"],
+  datasets:[
+    {label:"马士基 MSK",data:[62,90,95,92,88,90],borderColor:"#2489c8",backgroundColor:"rgba(36,137,200,.15)",borderWidth:2},
+    {label:"地中海 MSC",data:[78,70,65,58,95,75],borderColor:"#6c3db5",backgroundColor:"rgba(108,61,181,.15)",borderWidth:2},
+    {label:"达飞 CMA CGM",data:[70,72,80,82,85,80],borderColor:"#1d4ed8",backgroundColor:"rgba(29,78,216,.15)",borderWidth:2},
+    {label:"中远 COSCO",data:[80,62,68,60,88,72],borderColor:"#c0860a",backgroundColor:"rgba(192,134,10,.15)",borderWidth:2},
+    {label:"赫伯罗特 HPL",data:[73,88,78,80,72,82],borderColor:"#e67e22",backgroundColor:"rgba(230,126,34,.15)",borderWidth:2},
+    {label:"以星 ZIM",data:[72,56,82,50,58,62],borderColor:"#c0392b",backgroundColor:"rgba(192,57,43,.15)",borderWidth:2},
+  ]
+},{scales:{r:{ticks:{backdropColor:"transparent",font:{size:10}},pointLabels:{font:{size:11}},suggestedMin:40,suggestedMax:100}}});
+
+// Chart 5: Competitor Positioning Scatter
+const POS_DATA = COMPETITORS.map(c=>({x:c.priceScore,y:c.score,r:Math.sqrt(c.teu)*1.8,label:c.name,group:c.group}));
+C("positionChart","bubble",{
+  datasets:[
+    {label:"欧系",data:POS_DATA.filter(d=>d.group==="eu"),backgroundColor:"rgba(29,78,216,.6)",borderColor:"#1d4ed8",borderWidth:1},
+    {label:"中港台系",data:POS_DATA.filter(d=>d.group==="cn"),backgroundColor:"rgba(180,83,9,.6)",borderColor:"#b45309",borderWidth:1},
+    {label:"日韩系",data:POS_DATA.filter(d=>d.group==="jpkr"),backgroundColor:"rgba(22,101,52,.6)",borderColor:"#166534",borderWidth:1},
+    {label:"其他",data:POS_DATA.filter(d=>d.group==="other"),backgroundColor:"rgba(124,58,237,.6)",borderColor:"#7c3aed",borderWidth:1},
+  ]
+},{scales:{x:{title:{display:true,text:"运价竞争力（分数越高=价格越低）"},min:55,max:95},y:{title:{display:true,text:"综合服务评分"},min:55,max:100}},plugins:{tooltip:{callbacks:{label:ctx=>ctx.raw.label}}}});
+
+// Chart 6: Bunker fuel (W25 update)
+C("bunkerChart","bar",{
+  labels:["新加坡","鹿特丹","休斯顿","富查伊拉","舟山","洛杉矶"],
+  datasets:[
+    {label:"VLSFO 0.5% ($/mt)",data:[571,554,580,562,592,584],backgroundColor:["#e67e22","#2489c8","#c0392b","#e5a710","#1d6fa4","#6c3db5"],borderRadius:6},
+  ]
+},{scales:{y:{title:{display:true,text:"$/mt"}}},plugins:{legend:{display:false}}});
+
+// Chart 7: BAF联动 (W25 update)
+C("bafChart","line",{
+  labels:["2025Q1","2025Q2","2025Q3","2025Q4","2026Q1","2026Q2(E)"],
+  datasets:[
+    {label:"VLSFO价格 ($/mt)",data:[520,535,548,558,562,571],borderColor:"#e67e22",backgroundColor:"rgba(230,126,34,.1)",borderWidth:2.5,tension:.4,fill:true,yAxisID:"y"},
+    {label:"BAF调整系数(欧线)",data:[320,330,340,355,360,378],borderColor:"#1d6fa4",backgroundColor:"rgba(29,111,164,.1)",borderWidth:2.5,tension:.4,fill:true,yAxisID:"y1"},
+  ]
+},{scales:{y:{type:"linear",position:"left",title:{display:true,text:"VLSFO $/mt"}},y1:{type:"linear",position:"right",title:{display:true,text:"BAF $/FEU"},grid:{drawOnChartArea:false}}}});
+
+// ─────────────────────────────────────────────
+// NAV Active State
+// ─────────────────────────────────────────────
+const navLinks = document.querySelectorAll(".nav a");
+const sections = document.querySelectorAll(".section");
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(l=>l.classList.remove("active"));
+      const target = document.querySelector(`.nav a[href="#${e.target.id}"]`);
+      if(target) target.classList.add("active");
+    }
+  });
+},{rootMargin:"-90px 0px -60% 0px"});
+sections.forEach(s=>observer.observe(s));
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+renderSCFITable("all");
+renderCompetitorTable();
+
+// Update freshness indicator
+setInterval(()=>{
+  const dot = document.getElementById("freshDot");
+  if(dot) dot.classList.toggle("stale");
+},5000);
+</script>
+
+</body>
+</html>
